@@ -14,9 +14,12 @@ export default function Home() {
         stress: 0,
         contradiction: 0,
         deception: 0,
-        willpower: 100
+        willpower: 100,
+        stressPeakTurns: 0
     });
     const [selectedType, setSelectedType] = useState<ChatMessage['type']>('default');
+    const [clues, setClues] = useState<string[]>([]);
+    const [notes, setNotes] = useState<string>('');
 
     const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -30,6 +33,8 @@ export default function Home() {
         setSelectedScenario(scenario);
         setCurrentState(scenario.initialStatus);
         setMessages([]);
+        setClues([]);
+        setNotes('');
     };
 
     const handleSend = async () => {
@@ -55,8 +60,36 @@ export default function Home() {
             const data: GameResponse = await response.json();
 
             if (data.answer) {
+                // 스트레스 100% 지속 여부 확인
+                let nextPeakTurns = 0;
+                if (data.state.stress >= 100) {
+                    nextPeakTurns = (currentState.stressPeakTurns || 0) + 1;
+                }
+
+                // 3턴 지속 시 강제 종료
+                if (nextPeakTurns >= 3) {
+                    setMessages(prev => [...prev,
+                    { role: 'assistant', content: data.answer },
+                    { role: 'system', content: "CRITICAL SYSTEM FAILURE: 용의자의 상태가 통제 불능입니다. 의료진에 의해 심문이 강제 중단되었습니다. 접속을 해제합니다..." }
+                    ]);
+                    setTimeout(() => {
+                        setSelectedScenario(null);
+                    }, 3000);
+                    return;
+                }
+
                 setMessages(prev => [...prev, { role: 'assistant', content: data.answer }]);
-                setCurrentState(data.state);
+                setCurrentState({ ...data.state, stressPeakTurns: nextPeakTurns });
+
+                // 단서 추출 로직
+                const clueMatches = data.answer.match(/<clue>(.*?)<\/clue>/g);
+                if (clueMatches) {
+                    const newClues = clueMatches.map(m => m.replace(/<\/?clue>/g, ''));
+                    setClues(prev => {
+                        const uniqueClues = new Set([...prev, ...newClues]);
+                        return Array.from(uniqueClues);
+                    });
+                }
 
                 if (data.isConfessed) {
                     setMessages(prev => [...prev, { role: 'system', content: `SYSTEM: 대상(${selectedScenario.name})이 자백했습니다. 임무 완료.` }]);
@@ -117,11 +150,17 @@ export default function Home() {
     return (
         <main className="container">
             {/* 상단 상태 바 */}
-            <div className="status-bar glow-text">
+            <div className={`status-bar glow-text ${currentState.stress >= 100 ? 'border-red-500' : ''}`}>
                 <div className="flex gap-12">
-                    <span className="flex items-center gap-2"><Zap size={14} /> STRESS: {currentState.stress}%</span>
-                    <span className="flex items-center gap-2"><AlertTriangle size={14} /> CONTRADICTION: {currentState.contradiction}%</span>
-                    <span className="flex items-center gap-2"><Shield size={14} /> WILLPOWER: {currentState.willpower}%</span>
+                    <span className={`flex items-center gap-2 ${currentState.stress >= 100 ? 'overload-text' : ''}`}>
+                        <Zap size={14} /> STRESS: {currentState.stress >= 100 ? 'ERR_MAX' : `${currentState.stress}%`}
+                    </span>
+                    <span className={`flex items-center gap-2 ${currentState.stress >= 100 ? 'overload-text' : ''}`}>
+                        <AlertTriangle size={14} /> CONTRADICTION: {currentState.stress >= 100 ? 'ERR_OVERLOAD' : `${currentState.contradiction}%`}
+                    </span>
+                    <span className={`flex items-center gap-2 ${currentState.stress >= 100 ? 'overload-text' : ''}`}>
+                        <Shield size={14} /> WILLPOWER: {currentState.stress >= 100 ? 'SYSTEM_UNSTABLE' : `${currentState.willpower}%`}
+                    </span>
                 </div>
                 <div className="flex gap-4 items-center">
                     <button
@@ -138,7 +177,7 @@ export default function Home() {
                 {/* 메인 심문 구역 (왼쪽 전체 영역) */}
                 <div className="chat-column">
                     {/* 채팅 로그 구역 (빨간 네모 - 스크롤 발생 구역) */}
-                    <div className="chat-log-area" ref={scrollRef}>
+                    <div className={`chat-log-area ${currentState.stress >= 100 ? 'glitch-active' : ''}`} ref={scrollRef}>
                         <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
                         {messages.length === 0 && (
                             <div className="text-center mt-20 opacity-50">심문을 시작하십시오. 대상은 {selectedScenario.job} {selectedScenario.name}입니다.</div>
@@ -235,6 +274,31 @@ export default function Home() {
                             <li>STRESS가 높을수록 답변이 거칠어집니다.</li>
                             <li>CONTRADICTION은 결정적 증거가 됩니다.</li>
                         </ul>
+                    </section>
+
+                    <section className="info-section">
+                        <div className="info-title"><Briefcase size={16} /> EVIDENCE LOG</div>
+                        {clues.length === 0 ? (
+                            <div className="text-[10px] opacity-40">아직 발견된 단서가 없습니다.</div>
+                        ) : (
+                            <div className="space-y-1">
+                                {clues.map((clue, idx) => (
+                                    <div key={idx} className="evidence-item animate-in fade-in duration-500">
+                                        {clue}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </section>
+
+                    <section className="info-section">
+                        <div className="info-title"><User size={16} /> INVESTIGATIVE NOTES</div>
+                        <textarea
+                            className="investigative-notes"
+                            placeholder="사건에 관한 메모를 남기십시오..."
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                        />
                     </section>
                 </aside>
             </div>

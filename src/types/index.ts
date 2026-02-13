@@ -3,6 +3,7 @@ export interface InteractionState {
     contradiction: number;
     deception: number;
     willpower: number;
+    stressPeakTurns: number; // 스트레스 100% 지속 턴 수
 }
 
 export interface ChatMessage {
@@ -19,6 +20,7 @@ export interface Scenario {
     caseName: string;
     description: string;
     secret: string;
+    clues: string[];
     initialStatus: InteractionState;
 }
 
