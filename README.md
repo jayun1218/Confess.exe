@@ -31,6 +31,11 @@
 ### 4. 고유한 사이버펑크 비주얼
 *   터미널 스타일의 어두운 테마와 강렬한 네온 컬러 스타일링.
 *   시스템 오버로드 시 발생하는 역동적인 글리치(Glitch) 효과와 에러 팝업 시뮬레이션.
+*   상단 바의 설정(⚙️) 아이콘을 통한 실시간 볼륨 조절.
+
+### 5. 몰입형 음향 시스템 (Audio System)
+*   **시나리오별 테마 BGM**: 각 사건의 분위기에 맞춘 배경 음악이 자동으로 재생됩니다.
+*   **볼륨 컨트롤**: 상단 바의 설정 메뉴에서 BGM 음량을 조절할 수 있습니다.
 
 ---
 
@@ -71,8 +76,16 @@ npm run dev
 ---
 *주의: 모든 시나리오는 가상의 사건이며, 실제 인물이나 단체와 관련이 없습니다.*
 
-### 🎵 무료 BGM 리소스 추천
-게임의 분위기에 어울리는 음악을 아래 사이트에서 무료로 다운로드하여 `public/audio/` 폴더에 넣을 수 있습니다:
+### 🎵 무료 BGM 리소스 가이드
+게임의 몰입감을 높이기 위해 직접 음악 파일을 준비하여 아래 경로에 배치할 수 있습니다.
+
+#### 파일 배치 경로
+`public/audio/` 폴더 내에 시나리오별 ID에 맞춘 파일명을 사용하십시오:
+*   강도훈 시나리오: `murder_case_ambient.mp3`
+*   이다혜 시나리오: `bio_lab_mystery.mp3`
+*   박민석 시나리오: `cyber_hacking_loop.mp3`
+
+#### BGM 리소스 추천 사이트
 *   [StockTune](https://stocktune.com) - 하이퀄리티 AI 생성 앰비언트 음악.
 *   [Mixkit](https://mixkit.co/free-stock-music/ambient/) - 다양한 무료 배경음악 제공.
 *   [YouTube (Karl Casey @ White Bat Audio)](https://www.youtube.com/@WhiteBatAudio) - 최고의 로열티 프리 사이버펑크 음악.
