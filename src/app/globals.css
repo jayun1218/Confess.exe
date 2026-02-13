@@ -169,3 +169,57 @@ input:focus {
   border-color: var(--primary-color);
   box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
 }
+
+.scenario-card {
+  flex: 0 0 400px;
+  min-height: 520px;
+  padding: 2.5rem;
+  border: 1px solid rgba(0, 255, 65, 0.3);
+  background: rgba(10, 10, 12, 0.9);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+}
+
+.scenario-card:hover {
+  background: rgba(0, 255, 65, 0.05);
+  box-shadow: 0 0 30px rgba(0, 255, 65, 0.1);
+  transform: translateY(-5px);
+  border-color: #00ff41;
+}
+
+.scenario-container {
+  display: flex;
+  justify-content: center;
+  gap: 4rem;
+  padding: 3rem 2rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.scenario-container>div {
+  scroll-snap-align: center;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.clue-text {
+  color: #ff003c;
+  font-weight: bold;
+  text-shadow: 0 0 5px #ff003c, 0 0 10px #ff003c;
+  border-bottom: 1px dashed #ff003c;
+  padding: 0 2px;
+}

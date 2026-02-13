@@ -1,17 +1,19 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { ChatMessage, InteractionState, GameResponse } from '@/types';
-import { Shield, Brain, Zap, Heart, AlertTriangle, Send } from 'lucide-react';
+import { ChatMessage, InteractionState, GameResponse, Scenario } from '@/types';
+import { scenarios } from '@/data/scenarios';
+import { Shield, Brain, Zap, Heart, AlertTriangle, Send, User, Briefcase, FileText } from 'lucide-react';
 
 export default function Home() {
+    const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [currentState, setCurrentState] = useState<InteractionState>({
-        stress: 20,
+        stress: 0,
         contradiction: 0,
-        deception: 30,
+        deception: 0,
         willpower: 100
     });
     const [selectedType, setSelectedType] = useState<ChatMessage['type']>('default');
@@ -24,8 +26,14 @@ export default function Home() {
         }
     }, [messages]);
 
+    const handleSelectScenario = (scenario: Scenario) => {
+        setSelectedScenario(scenario);
+        setCurrentState(scenario.initialStatus);
+        setMessages([]);
+    };
+
     const handleSend = async () => {
-        if (!input.trim() || isLoading) return;
+        if (!input.trim() || isLoading || !selectedScenario) return;
 
         const userMessage: ChatMessage = { role: 'user', content: input, type: selectedType };
         setMessages(prev => [...prev, userMessage]);
@@ -39,7 +47,8 @@ export default function Home() {
                 body: JSON.stringify({
                     messages: [...messages, userMessage],
                     currentState,
-                    questionType: selectedType
+                    questionType: selectedType,
+                    scenarioId: selectedScenario.id
                 }),
             });
 
@@ -50,7 +59,7 @@ export default function Home() {
                 setCurrentState(data.state);
 
                 if (data.isConfessed) {
-                    setMessages(prev => [...prev, { role: 'system', content: "SYSTEM: 대상이 자백했습니다. 임무 완료." }]);
+                    setMessages(prev => [...prev, { role: 'system', content: `SYSTEM: 대상(${selectedScenario.name})이 자백했습니다. 임무 완료.` }]);
                 }
             }
         } catch (error) {
@@ -60,16 +69,69 @@ export default function Home() {
         }
     };
 
+    if (!selectedScenario) {
+        return (
+            <main className="container flex items-center justify-center min-h-screen">
+                <div className="w-full max-w-6xl px-4">
+                    <h1 className="text-4xl text-center mb-16 glow-text tracking-[0.3em]">SELECT_SCENARIO</h1>
+                    <div className="scenario-container hide-scrollbar">
+                        {scenarios.map((s) => (
+                            <div
+                                key={s.id}
+                                className="scenario-card p-10 cursor-pointer group relative overflow-hidden flex flex-col justify-between"
+                                onClick={() => handleSelectScenario(s)}
+                            >
+                                <div className="absolute top-0 left-0 w-full h-1 bg-[#00ff41] opacity-20 group-hover:opacity-100 transition-all duration-300"></div>
+                                <div className="absolute bottom-0 left-0 w-full h-1 bg-[#00ff41] opacity-20 group-hover:opacity-100 transition-all duration-300"></div>
+                                <div className="flex flex-col gap-6">
+                                    <div className="flex items-start justify-between">
+                                        <h3 className="text-3xl font-black group-hover:text-[#00ff41] transition-colors leading-tight">{s.name}</h3>
+                                        <div className="text-[10px] py-1 px-2 border border-[#333] opacity-50 uppercase tracking-[0.2em]">{s.id}</div>
+                                    </div>
+                                    <div className="text-xs text-[#00ff41] font-bold uppercase tracking-widest bg-[#00ff41]/10 self-start px-2 py-1">{s.caseName}</div>
+                                    <p className="text-base line-clamp-8 text-[#aaa] font-light leading-relaxed tracking-tight">{s.description}</p>
+                                </div>
+                                <div className="mt-12 backdrop-blur-sm bg-black/20 p-4 border border-white/5">
+                                    <div className="grid grid-cols-2 gap-4 text-xs opacity-60">
+                                        <div className="flex flex-col border-l border-[#00ff41] pl-3">
+                                            <span className="text-[8px] uppercase opacity-50">Age</span>
+                                            <span className="text-lg font-bold">{s.age}</span>
+                                        </div>
+                                        <div className="flex flex-col border-l border-[#00ff41] pl-3">
+                                            <span className="text-[8px] uppercase opacity-50">Occupation</span>
+                                            <span className="text-lg font-bold uppercase truncate">{s.job}</span>
+                                        </div>
+                                    </div>
+                                    <div className="mt-8 pt-6 border-t border-[#00ff41]/20 text-center text-sm opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 text-[#00ff41] font-black tracking-[0.4em]">
+                                        ACCESS_DENIED_BY_ROOT {">"}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </main>
+        );
+    }
+
     return (
         <main className="container">
             {/* 상단 상태 바 */}
             <div className="status-bar glow-text">
-                <div className="flex gap-4">
+                <div className="flex gap-12">
                     <span className="flex items-center gap-2"><Zap size={14} /> STRESS: {currentState.stress}%</span>
                     <span className="flex items-center gap-2"><AlertTriangle size={14} /> CONTRADICTION: {currentState.contradiction}%</span>
                     <span className="flex items-center gap-2"><Shield size={14} /> WILLPOWER: {currentState.willpower}%</span>
                 </div>
-                <div>CONFESS.EXE v1.0.4 - ACTIVE_SESSION</div>
+                <div className="flex gap-4 items-center">
+                    <button
+                        onClick={() => setSelectedScenario(null)}
+                        className="text-[10px] py-0 px-2 border-[#555] text-[#888] hover:border-[#00ff41] hover:text-[#00ff41]"
+                    >
+                        ABORT_SESSION
+                    </button>
+                    <span>CONFESS.EXE v1.0.4 - ACTIVE_SESSION ({selectedScenario.name})</span>
+                </div>
             </div>
 
             <div className="main-layout flex-1 pt-4 overflow-hidden">
@@ -79,14 +141,22 @@ export default function Home() {
                     <div className="flex-1 overflow-y-auto mb-4 p-4 border border-[#333] bg-black/50 relative" ref={scrollRef}>
                         <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
                         {messages.length === 0 && (
-                            <div className="text-center mt-20 opacity-50">심문을 시작하십시오. 대상은 살인 용의자 강도훈입니다.</div>
+                            <div className="text-center mt-20 opacity-50">심문을 시작하십시오. 대상은 {selectedScenario.job} {selectedScenario.name}입니다.</div>
                         )}
                         {messages.map((m, i) => (
                             <div key={i} className={`mb-4 flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`max-w-[80%] p-3 border ${m.role === 'user' ? 'border-[#00ff41] text-[#00ff41]' : 'border-[#666] text-white bg-[#111]'
                                     } ${m.role === 'system' ? 'border-red-500 text-red-500 w-full text-center' : ''}`}>
                                     <div className="text-[10px] uppercase opacity-50 mb-1">{m.role === 'user' ? 'Investigator' : 'Suspect'}</div>
-                                    <div className="whitespace-pre-wrap">{m.content}</div>
+                                    <div className="whitespace-pre-wrap">
+                                        {m.content.split(/(<clue>.*?<\/clue>)/g).map((part, index) => {
+                                            if (part.startsWith('<clue>') && part.endsWith('</clue>')) {
+                                                const content = part.replace('<clue>', '').replace('</clue>', '');
+                                                return <span key={index} className="clue-text">{content}</span>;
+                                            }
+                                            return part;
+                                        })}
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -131,12 +201,11 @@ export default function Home() {
                 {/* 사이드바: 시나리오 및 가이드 */}
                 <aside className="sidebar">
                     <section className="info-section">
-                        <div className="info-title"><Brain size={16} /> CASE SCENARIO</div>
+                        <div className="info-title"><FileText size={16} /> CASE SCENARIO</div>
                         <div className="scenario-text">
-                            <p className="mb-2"><strong>사건명:</strong> 서초동 저택 살인 사건</p>
-                            <p className="mb-2"><strong>용의자:</strong> 강도훈 (42세, IT 사업가)</p>
-                            <p className="mb-4 text-sm">피해자는 강도훈의 오랜 비즈니스 파트너였으며, 자신의 자택 서재에서 살해된 채 발견되었습니다. 강도훈은 범행 현장 근처에서 목격되었으나 알리바이를 주장하며 모든 혐의를 부인하고 있습니다.</p>
-                            <p className="text-xs text-[#666]">현장에는 외부 침입 흔적이 없으나, 당신은 그가 알지 못하는 '비밀 통로'가 있을 것으로 의심하고 있습니다.</p>
+                            <p className="mb-2"><strong>사건명:</strong> {selectedScenario.caseName}</p>
+                            <p className="mb-2"><strong>용의자:</strong> {selectedScenario.name} ({selectedScenario.age}세, {selectedScenario.job})</p>
+                            <p className="mb-4 text-sm">{selectedScenario.description}</p>
                         </div>
                     </section>
 
