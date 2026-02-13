@@ -237,7 +237,11 @@ export default function Home() {
                             <input
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+                                        handleSend();
+                                    }
+                                }}
                                 placeholder="질문을 입력하십시오..."
                                 className="flex-1"
                             />
