@@ -134,11 +134,11 @@ export default function Home() {
                 </div>
             </div>
 
-            <div className="main-layout flex-1 pt-4 overflow-hidden">
-                {/* 메인 심문 구역 */}
-                <div className="flex flex-col h-full overflow-hidden">
-                    {/* 채팅 로그 구역 */}
-                    <div className="flex-1 overflow-y-auto mb-4 p-4 border border-[#333] bg-black/50 relative" ref={scrollRef}>
+            <div className="main-layout">
+                {/* 메인 심문 구역 (왼쪽 전체 영역) */}
+                <div className="chat-column">
+                    {/* 채팅 로그 구역 (빨간 네모 - 스크롤 발생 구역) */}
+                    <div className="chat-log-area" ref={scrollRef}>
                         <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
                         {messages.length === 0 && (
                             <div className="text-center mt-20 opacity-50">심문을 시작하십시오. 대상은 {selectedScenario.job} {selectedScenario.name}입니다.</div>
@@ -163,9 +163,9 @@ export default function Home() {
                         {isLoading && <div className="animate-pulse">분석 중...</div>}
                     </div>
 
-                    {/* 질문 타입 선택 및 입력창 */}
-                    <div className="bg-[#111] p-4 border border-[#333]">
-                        <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+                    {/* 질문 타입 선택 및 입력창 (파란 네모 하단 고정) */}
+                    <div className="input-area">
+                        <div className="flex gap-2 mb-4 overflow-x-auto pb-2 hide-scrollbar">
                             {[
                                 { id: 'default', label: '기본', icon: <Send size={14} /> },
                                 { id: 'pressure', label: '압박', icon: <Zap size={14} /> },

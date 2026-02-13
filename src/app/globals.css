@@ -14,15 +14,21 @@
   margin: 0;
 }
 
+html,
+body {
+  height: 100% !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
 body {
   background-color: var(--bg-color);
   color: var(--text-color);
   font-family: var(--font-mono);
-  overflow-x: hidden;
-  height: 100vh;
 }
 
-/* 터미널 질감 효과 */
 body::before {
   content: " ";
   display: block;
@@ -32,56 +38,106 @@ body::before {
   bottom: 0;
   right: 0;
   background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-  z-index: 2;
+  z-index: 999;
   background-size: 100% 2px, 3px 100%;
   pointer-events: none;
 }
 
-h1,
-h2,
-h3 {
-  text-transform: uppercase;
-  letter-spacing: 2px;
-}
-
-.glow-text {
-  text-shadow: 0 0 5px var(--primary-color), 0 0 10px var(--primary-color);
+.container {
+  width: 100vw;
+  height: 100vh;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 0 1rem;
+  max-width: 1800px;
+  margin: 0 auto;
+  overflow: hidden;
 }
 
 .status-bar {
+  height: 40px;
+  flex-shrink: 0;
   display: flex;
   justify-content: space-between;
-  padding: 0.5rem 1rem;
+  align-items: center;
+  padding: 0 1rem;
   border-bottom: 1px solid var(--border-color);
   background: var(--header-bg);
   font-size: 0.8rem;
+  z-index: 10;
 }
 
 .main-layout {
-  display: grid;
-  grid-template-columns: 1fr 300px;
-  gap: 1.5rem;
-  height: calc(100vh - 40px);
+  flex: 1;
+  display: flex !important;
+  /* Grid 대신 Flex 사용 */
+  gap: 1rem;
+  padding: 1rem 0;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
 }
 
-.container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 1rem 2rem;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
+.chat-column {
+  flex: 1;
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.chat-log-area {
+  flex: 1;
+  overflow-y: auto !important;
+  min-height: 0;
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+  background: rgba(0, 0, 0, 0.4);
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.input-area {
+  flex-shrink: 0;
+  background: #0a0a0c;
+  border: 1px solid var(--border-color);
+  padding: 1rem;
+  box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.5);
 }
 
 .sidebar {
+  width: 350px;
+  flex-shrink: 0;
+  height: 100%;
   border: 1px solid var(--border-color);
-  background: rgba(10, 10, 12, 0.8);
+  background: rgba(10, 10, 12, 0.6);
   padding: 1.5rem;
-  overflow-y: auto;
+  overflow-y: auto !important;
   font-size: 0.85rem;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+}
+
+/* 스크롤바 스타일 강화 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 255, 65, 0.02);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  box-shadow: 0 0 10px var(--primary-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #fff;
 }
 
 .info-section {
@@ -100,12 +156,6 @@ h3 {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.9rem;
-}
-
-.guide-item {
-  margin-bottom: 0.8rem;
-  line-height: 1.4;
 }
 
 .guide-tag {
@@ -116,23 +166,6 @@ h3 {
   margin-right: 4px;
 }
 
-.scenario-text {
-  line-height: 1.6;
-  color: #ccc;
-}
-
-@media (max-width: 900px) {
-  .main-layout {
-    grid-template-columns: 1fr;
-    overflow-y: auto;
-    height: auto;
-  }
-
-  .sidebar {
-    order: -1;
-  }
-}
-
 button {
   background: transparent;
   border: 1px solid var(--primary-color);
@@ -140,24 +173,17 @@ button {
   padding: 0.5rem 1rem;
   font-family: var(--font-mono);
   cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-button:active {
-  transform: scale(0.95);
 }
 
 .active-strategy {
   background: var(--primary-color) !important;
   color: black !important;
-  box-shadow: 0 0 20px var(--primary-color), inset 0 0 10px rgba(0, 0, 0, 0.3);
   font-weight: bold;
-  border-color: white;
 }
 
 input {
-  background: transparent;
-  border: 1px solid var(--border-color);
+  background: rgba(0, 20, 0, 0.2);
+  border: 1px solid #333;
   color: white;
   padding: 1rem;
   width: 100%;
@@ -167,7 +193,6 @@ input {
 input:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
 }
 
 .scenario-card {
@@ -175,19 +200,9 @@ input:focus {
   min-height: 520px;
   padding: 2.5rem;
   border: 1px solid rgba(0, 255, 65, 0.3);
-  background: rgba(10, 10, 12, 0.9);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  position: relative;
-}
-
-.scenario-card:hover {
-  background: rgba(0, 255, 65, 0.05);
-  box-shadow: 0 0 30px rgba(0, 255, 65, 0.1);
-  transform: translateY(-5px);
-  border-color: #00ff41;
 }
 
 .scenario-container {
@@ -196,30 +211,15 @@ input:focus {
   gap: 4rem;
   padding: 3rem 2rem;
   overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scroll-behavior: smooth;
   width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-.scenario-container>div {
-  scroll-snap-align: center;
 }
 
 .hide-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-.hide-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+  display: none !important;
 }
 
 .clue-text {
   color: #ff003c;
   font-weight: bold;
-  text-shadow: 0 0 5px #ff003c, 0 0 10px #ff003c;
-  border-bottom: 1px dashed #ff003c;
-  padding: 0 2px;
+  text-shadow: 0 0 5px #ff003c;
 }
