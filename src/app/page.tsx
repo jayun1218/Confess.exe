@@ -8,6 +8,8 @@ import { Shield, Brain, Zap, Heart, AlertTriangle, Send, User, Briefcase, FileTe
 export default function Home() {
     const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
     const [hoveredScenarioId, setHoveredScenarioId] = useState<string | null>(null);
+    const [setupStep, setSetupStep] = useState<number>(0); // 0: 선택전, 1~3: 준비단계
+    const [tempStress, setTempStress] = useState<number>(0); // 준비단계에서 누적되는 스트레스
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -32,11 +34,56 @@ export default function Home() {
 
     const handleSelectScenario = (scenario: Scenario) => {
         setSelectedScenario(scenario);
-        setCurrentState(scenario.initialStatus);
+        setSetupStep(1);
+        setTempStress(0);
         setMessages([]);
         setClues([]);
         setNotes('');
     };
+
+    const handleSetupChoice = (stressBonus: number) => {
+        const nextStress = tempStress + stressBonus;
+        if (setupStep < 3) {
+            setTempStress(nextStress);
+            setSetupStep(prev => prev + 1);
+        } else {
+            if (selectedScenario) {
+                const finalStatus = {
+                    ...selectedScenario.initialStatus,
+                    stress: nextStress
+                };
+                setCurrentState(finalStatus);
+                setSetupStep(0);
+            }
+        }
+    };
+
+    const setupSteps = [
+        {
+            title: "STEP 01: ENVIRONMENT_SETTING",
+            question: "취조실의 조명을 어떻게 설정하겠습니까?",
+            options: [
+                { label: "암전 및 단독 조명", desc: "압박감을 극대화합니다.", stress: 10 },
+                { label: "일상적인 조명", desc: "경계심을 완화시킵니다.", stress: 0 }
+            ]
+        },
+        {
+            title: "STEP 02: EVIDENCE_EXPOSURE",
+            question: "책상 위에 무엇을 배치하겠습니까?",
+            options: [
+                { label: "결정적 증거물 배치", desc: "범행 도구를 미리 보여줍니다.", stress: 10 },
+                { label: "빈 책상 유지", desc: "심리적 허점을 노립니다.", stress: 0 }
+            ]
+        },
+        {
+            title: "STEP 03: INITIAL_APPROACH",
+            question: "용의자에게 처음 건넬 첫마디는?",
+            options: [
+                { label: "고압적인 호통", desc: "기선을 제압합니다.", stress: 10 },
+                { label: "부드러운 티타임", desc: "협조를 유도합니다.", stress: 0 }
+            ]
+        }
+    ];
 
     const handleSend = async () => {
         if (!input.trim() || isLoading || !selectedScenario) return;
@@ -158,6 +205,33 @@ export default function Home() {
         );
     }
 
+    if (setupStep > 0) {
+        const currentSetup = setupSteps[setupStep - 1];
+        return (
+            <div className="setup-container">
+                <div className="w-full max-w-2xl px-4">
+                    <div className="mb-8 text-center bg-[#00ff41]/5 p-2 border border-[#00ff41]/20">
+                        <span className="text-[#00ff41] text-xs font-black tracking-[0.5em]">{currentSetup.title}</span>
+                    </div>
+                    <h2 className="text-2xl text-center mb-12 text-white font-bold">{currentSetup.question}</h2>
+                    <div className="grid grid-cols-1 gap-6">
+                        {currentSetup.options.map((opt: any, idx: number) => (
+                            <button
+                                key={idx}
+                                onClick={() => handleSetupChoice(opt.stress)}
+                                className="setup-option-card group border border-[#333] p-8 text-center hover:border-[#00ff41] transition-all duration-300 relative overflow-hidden"
+                            >
+                                <div className="text-[#00ff41] font-black tracking-[0.3em] text-xl mb-3 uppercase">{opt.label}</div>
+                                <p className="text-sm text-[#888] font-light italic">{opt.desc}</p>
+                                <div className="absolute top-0 right-0 w-0 h-full bg-[#00ff41]/5 group-hover:w-full transition-all duration-500 -z-10"></div>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <main className={`container ${currentState.stress >= 100 ? 'main-glitch' : ''}`}>
             {/* 전체 화면 오버레이 레이어 */}
@@ -186,7 +260,11 @@ export default function Home() {
                 </div>
                 <div className="flex gap-4 items-center">
                     <button
-                        onClick={() => setSelectedScenario(null)}
+                        onClick={() => {
+                            setSelectedScenario(null);
+                            setSetupStep(0);
+                            setTempStress(0);
+                        }}
                         className="text-[10px] py-0 px-2 border-[#555] text-[#888] hover:border-[#00ff41] hover:text-[#00ff41]"
                     >
                         ABORT_SESSION
@@ -206,7 +284,7 @@ export default function Home() {
                         )}
                         {messages.map((m, i) => (
                             <div key={i} className={`mb-4 flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[80%] p-3 border ${m.role === 'user' ? 'border-[#00ff41] text-[#00ff41]' : 'border-[#666] text-white bg-[#111]'
+                                <div className={`max-w-[80%] p-3 border ${m.role === 'user' ? 'investigator-msg' : 'border-[#666] text-white bg-[#111]'
                                     } ${m.role === 'system' ? 'border-red-500 text-red-500 w-full text-center' : ''}`}>
                                     <div className="text-[10px] uppercase opacity-50 mb-1">{m.role === 'user' ? 'Investigator' : 'Suspect'}</div>
                                     <div className="whitespace-pre-wrap">

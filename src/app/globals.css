@@ -558,3 +558,24 @@ input:focus {
   font-weight: bold;
   animation: pulse 1s infinite;
 }
+
+/* 사전질문 컨테이너 중앙 정렬 */
+.setup-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--bg-color);
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 50;
+}
+
+/* 심문자 메시지 스타일 (Cyan) */
+.investigator-msg {
+  border: none !important;
+  color: #00ffff !important;
+  background: rgba(0, 255, 255, 0.05);
+}
