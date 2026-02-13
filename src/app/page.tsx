@@ -148,17 +148,28 @@ export default function Home() {
     }
 
     return (
-        <main className="container">
+        <main className={`container ${currentState.stress >= 100 ? 'main-glitch' : ''}`}>
+            {/* 전체 화면 오버레이 레이어 */}
+            {currentState.stress >= 100 && (
+                <>
+                    <div className="overload-overlay" />
+                    <div className="error-window" style={{ top: '20%', left: '15%', animationDelay: '0s' }}>ACCESS_DENIED: RESOURCE_LOCKED</div>
+                    <div className="error-window" style={{ top: '50%', left: '60%', animationDelay: '1.2s' }}>MEMORY_SEGMENTATION_FAULT</div>
+                    <div className="error-window" style={{ top: '40%', left: '30%', animationDelay: '0.5s' }}>CORE_DUMP_IN_PROGRESS</div>
+                    <div className="error-window" style={{ top: '70%', left: '10%', animationDelay: '2.3s' }}>UNKNOWN_EXCEPTION_DETECTED</div>
+                </>
+            )}
+
             {/* 상단 상태 바 */}
             <div className={`status-bar glow-text ${currentState.stress >= 100 ? 'border-red-500' : ''}`}>
                 <div className="flex gap-12">
-                    <span className={`flex items-center gap-2 ${currentState.stress >= 100 ? 'overload-text' : ''}`}>
+                    <span className={`flex items-center gap-2 ${currentState.stress >= 100 ? 'overload-text status-glitch' : ''}`}>
                         <Zap size={14} /> STRESS: {currentState.stress >= 100 ? 'ERR_MAX' : `${currentState.stress}%`}
                     </span>
-                    <span className={`flex items-center gap-2 ${currentState.stress >= 100 ? 'overload-text' : ''}`}>
+                    <span className={`flex items-center gap-2 ${currentState.stress >= 100 ? 'overload-text status-glitch' : ''}`}>
                         <AlertTriangle size={14} /> CONTRADICTION: {currentState.stress >= 100 ? 'ERR_OVERLOAD' : `${currentState.contradiction}%`}
                     </span>
-                    <span className={`flex items-center gap-2 ${currentState.stress >= 100 ? 'overload-text' : ''}`}>
+                    <span className={`flex items-center gap-2 ${currentState.stress >= 100 ? 'overload-text status-glitch' : ''}`}>
                         <Shield size={14} /> WILLPOWER: {currentState.stress >= 100 ? 'SYSTEM_UNSTABLE' : `${currentState.willpower}%`}
                     </span>
                 </div>
@@ -177,7 +188,7 @@ export default function Home() {
                 {/* 메인 심문 구역 (왼쪽 전체 영역) */}
                 <div className="chat-column">
                     {/* 채팅 로그 구역 (빨간 네모 - 스크롤 발생 구역) */}
-                    <div className={`chat-log-area ${currentState.stress >= 100 ? 'glitch-active' : ''}`} ref={scrollRef}>
+                    <div className="chat-log-area" ref={scrollRef}>
                         <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
                         {messages.length === 0 && (
                             <div className="text-center mt-20 opacity-50">심문을 시작하십시오. 대상은 {selectedScenario.job} {selectedScenario.name}입니다.</div>

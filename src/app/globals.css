@@ -8,6 +8,34 @@
   --font-mono: 'JetBrains Mono', 'Courier New', monospace;
 }
 
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+/* 전체 화면 노이즈 레이어 */
+.overload-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(255, 0, 60, 0.05);
+  pointer-events: none;
+  z-index: 9999;
+  animation: noise 0.1s infinite alternate-reverse;
+  opacity: 0.4;
+}
+
 * {
   box-sizing: border-box;
   padding: 0;
@@ -251,4 +279,150 @@ input:focus {
   border-color: var(--primary-color);
   color: var(--primary-color);
   background: rgba(0, 255, 65, 0.02);
+}
+
+/* 글리치 애니메이션 강화 (RGB Split 효과 추가) */
+@keyframes glitch {
+  0% {
+    transform: translate(0);
+    text-shadow: -2px 0 red, 2px 0 blue;
+  }
+
+  20% {
+    transform: translate(-3px, 3px);
+    text-shadow: 2px 0 red, -2px 0 blue;
+  }
+
+  40% {
+    transform: translate(-3px, -3px);
+    text-shadow: -1px 0 red, 1px 0 blue;
+  }
+
+  60% {
+    transform: translate(3px, 3px);
+    text-shadow: 1px 0 red, -1px 0 blue;
+  }
+
+  80% {
+    transform: translate(3px, -3px);
+    text-shadow: -2px 0 red, 2px 0 blue;
+  }
+
+  100% {
+    transform: translate(0);
+    text-shadow: 2px 0 red, -2px 0 blue;
+  }
+}
+
+@keyframes noise {
+  0% {
+    clip-path: inset(40% 0 61% 0);
+  }
+
+  20% {
+    clip-path: inset(92% 0 1% 0);
+  }
+
+  40% {
+    clip-path: inset(43% 0 1% 0);
+  }
+
+  60% {
+    clip-path: inset(25% 0 58% 0);
+  }
+
+  80% {
+    clip-path: inset(54% 0 7% 0);
+  }
+
+  100% {
+    clip-path: inset(58% 0 43% 0);
+  }
+}
+
+/* 상단바 전용 흔들림 효과 (속도 감속) */
+.status-glitch {
+  animation: glitch 0.3s infinite !important;
+}
+
+/* 메인 영역용 정적인 에러 연출 (글리치 효과에서 흔들림 제거) */
+.main-glitch {
+  border-color: #ff003c !important;
+  box-shadow: inset 0 0 30px rgba(255, 0, 60, 0.1) !important;
+  background: rgba(255, 0, 0, 0.02) !important;
+}
+
+/* 에러창 팝업 애니메이션 */
+@keyframes error-blink {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  5% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  15% {
+    opacity: 0;
+  }
+
+  25% {
+    opacity: 1;
+  }
+
+  30% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+.error-window {
+  position: absolute;
+  background: #000;
+  border: 1px solid #ff003c;
+  color: #ff003c;
+  padding: 10px;
+  font-size: 12px;
+  font-weight: bold;
+  z-index: 1000;
+  pointer-events: none;
+  box-shadow: 5px 5px 0 #ff003c;
+  animation: error-blink 4s infinite;
+}
+
+.error-window::before {
+  content: "⚠️ SYSTEM_ERROR";
+  display: block;
+  background: #ff003c;
+  color: black;
+  padding: 2px 5px;
+  margin-bottom: 5px;
+}
+
+.glitch-active::after {
+  content: "CRITICAL STORAGE ERROR: STRESS OVERLOAD";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #ff003c;
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: 0.5em;
+  z-index: 100;
+  pointer-events: none;
+  text-shadow: 2px 2px black;
+  white-space: nowrap;
+  opacity: 0.3;
+}
+
+.overload-text {
+  color: #ff003c !important;
+  font-weight: bold;
+  animation: pulse 1s infinite;
 }
