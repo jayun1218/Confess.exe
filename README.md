@@ -70,3 +70,10 @@ npm run dev
 
 ---
 *주의: 모든 시나리오는 가상의 사건이며, 실제 인물이나 단체와 관련이 없습니다.*
+
+### 🎵 무료 BGM 리소스 추천
+게임의 분위기에 어울리는 음악을 아래 사이트에서 무료로 다운로드하여 `public/audio/` 폴더에 넣을 수 있습니다:
+*   [StockTune](https://stocktune.com) - 하이퀄리티 AI 생성 앰비언트 음악.
+*   [Mixkit](https://mixkit.co/free-stock-music/ambient/) - 다양한 무료 배경음악 제공.
+*   [YouTube (Karl Casey @ White Bat Audio)](https://www.youtube.com/@WhiteBatAudio) - 최고의 로열티 프리 사이버펑크 음악.
+*   [Tabletop Audio](https://tabletopaudio.com) - 앰비언트 사운드 전문 사이트.

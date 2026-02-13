@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChatMessage, InteractionState, GameResponse, Scenario } from '@/types';
 import { scenarios } from '@/data/scenarios';
-import { Shield, Brain, Zap, Heart, AlertTriangle, Send, User, Briefcase, FileText } from 'lucide-react';
+import { Shield, Brain, Zap, Heart, AlertTriangle, Send, User, Briefcase, FileText, Settings, Volume2 } from 'lucide-react';
 
 export default function Home() {
     const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
@@ -23,8 +23,44 @@ export default function Home() {
     const [selectedType, setSelectedType] = useState<ChatMessage['type']>('default');
     const [clues, setClues] = useState<string[]>([]);
     const [notes, setNotes] = useState<string>('');
+    const [volume, setVolume] = useState(0.5);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     const scrollRef = useRef<HTMLDivElement>(null);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+
+    // BGM 재생 및 볼륨 조절 로직
+    useEffect(() => {
+        if (selectedScenario && selectedScenario.bgm) {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current = null;
+            }
+            const audio = new Audio(`/audio/${selectedScenario.bgm}`);
+            audio.loop = true;
+            audio.volume = volume;
+            audio.play().catch(err => console.log("Audio play deferred:", err));
+            audioRef.current = audio;
+        } else {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current = null;
+            }
+        }
+
+        return () => {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current = null;
+            }
+        };
+    }, [selectedScenario]);
+
+    useEffect(() => {
+        if (audioRef.current) {
+            audioRef.current.volume = volume;
+        }
+    }, [volume]);
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -265,13 +301,51 @@ export default function Home() {
                             setSetupStep(0);
                             setTempStress(0);
                         }}
-                        className="text-[10px] py-0 px-2 border-[#555] text-[#888] hover:border-[#00ff41] hover:text-[#00ff41]"
+                        className="text-[10px] py-0 px-2 border-[#555] text-[#888] hover:border-[#00ff41] hover:text-[#00ff41] whitespace-nowrap"
                     >
                         ABORT_SESSION
                     </button>
-                    <span>CONFESS.EXE v1.0.4 - ACTIVE_SESSION ({selectedScenario.name})</span>
+                    <span className="whitespace-nowrap">CONFESS.EXE v1.0.4 - ACTIVE_SESSION ({selectedScenario.name})</span>
+                    <button
+                        onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                        className="p-1 border-none hover:text-[#00ff41] transition-colors"
+                        title="SETTINGS"
+                    >
+                        <Settings size={14} />
+                    </button>
                 </div>
             </div>
+
+            {/* 설정 모달 (볼륨 조절) */}
+            {isSettingsOpen && (
+                <div className="settings-overlay" onClick={() => setIsSettingsOpen(false)}>
+                    <div className="settings-card" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex justify-center items-center w-full mb-6 border-b border-[#00ff41]/20 pb-2">
+                            <h3 className="text-[#00ff41] font-black tracking-[0.2em] text-[10px] m-0">SYSTEM_SETTINGS</h3>
+                        </div>
+                        <div className="space-y-6">
+                            <div className="space-y-3">
+                                <div className="flex justify-between text-[10px] uppercase tracking-tighter opacity-70">
+                                    <span className="flex items-center gap-2"><Volume2 size={12} /> BGM_VOLUME</span>
+                                    <span>{Math.round(volume * 100)}%</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="1"
+                                    step="0.01"
+                                    value={volume}
+                                    onChange={(e) => setVolume(parseFloat(e.target.value))}
+                                    className="volume-slider"
+                                />
+                            </div>
+                            <div className="pt-4 border-t border-white/5 text-[8px] opacity-30 text-center uppercase tracking-[0.2em]">
+                                CONFESS_OS_CORE_V1.0.4
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="main-layout">
                 {/* 메인 심문 구역 (왼쪽 전체 영역) */}

@@ -20,7 +20,8 @@ export const scenarios: Scenario[] = [
             deception: 30,
             willpower: 100,
             stressPeakTurns: 0
-        }
+        },
+        bgm: 'murder_case_ambient.mp3'
     },
     {
         id: 'lee',
@@ -41,7 +42,8 @@ export const scenarios: Scenario[] = [
             deception: 50,
             willpower: 100,
             stressPeakTurns: 0
-        }
+        },
+        bgm: 'bio_lab_mystery.mp3'
     },
     {
         id: 'park',
@@ -62,6 +64,7 @@ export const scenarios: Scenario[] = [
             deception: 20,
             willpower: 100,
             stressPeakTurns: 0
-        }
+        },
+        bgm: 'cyber_hacking_loop.mp3'
     }
 ];

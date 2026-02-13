@@ -22,6 +22,7 @@ export interface Scenario {
     secret: string;
     clues: string[];
     initialStatus: InteractionState;
+    bgm?: string;
 }
 
 export interface GameResponse {
