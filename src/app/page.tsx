@@ -7,6 +7,7 @@ import { Shield, Brain, Zap, Heart, AlertTriangle, Send, User, Briefcase, FileTe
 
 export default function Home() {
     const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
+    const [hoveredScenarioId, setHoveredScenarioId] = useState<string | null>(null);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -111,8 +112,10 @@ export default function Home() {
                         {scenarios.map((s) => (
                             <div
                                 key={s.id}
-                                className="scenario-card p-10 cursor-pointer group relative overflow-hidden flex flex-col justify-between"
+                                className={`scenario-card p-10 cursor-pointer group relative overflow-hidden flex flex-col justify-between transition-all duration-500 ${hoveredScenarioId === s.id ? `hover-active theme-${s.id}` : ''}`}
                                 onClick={() => handleSelectScenario(s)}
+                                onMouseEnter={() => setHoveredScenarioId(s.id)}
+                                onMouseLeave={() => setHoveredScenarioId(null)}
                             >
                                 <div className="absolute top-0 left-0 w-full h-1 bg-[#00ff41] opacity-20 group-hover:opacity-100 transition-all duration-300"></div>
                                 <div className="absolute bottom-0 left-0 w-full h-1 bg-[#00ff41] opacity-20 group-hover:opacity-100 transition-all duration-300"></div>
@@ -139,6 +142,14 @@ export default function Home() {
                                         ACCESS_DENIED_BY_ROOT {">"}
                                     </div>
                                 </div>
+                                {s.id === 'park' && hoveredScenarioId === 'park' && (
+                                    <>
+                                        <div className="hacking-popup" style={{ top: '15%', left: '10%', animationDelay: '0s' }}>{">"} IP_FOUND: 192.168.0.1</div>
+                                        <div className="hacking-popup" style={{ top: '60%', left: '55%', animationDelay: '0.5s' }}>{">"} BRUTE_FORCING...</div>
+                                        <div className="hacking-popup" style={{ top: '40%', left: '20%', animationDelay: '1.2s' }}>{">"} ROOT_ACCESS_GRANTED</div>
+                                        <div className="hacking-popup" style={{ top: '75%', left: '40%', animationDelay: '0.8s' }}>{">"} PACKET_SNIFFING...</div>
+                                    </>
+                                )}
                             </div>
                         ))}
                     </div>
