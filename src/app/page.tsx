@@ -271,8 +271,9 @@ export default function Home() {
                         <div className="info-title"><AlertTriangle size={16} /> SYSTEM NOTES</div>
                         <ul className="text-xs text-[#888] list-disc ml-4 space-y-1">
                             <li>WILLPOWER가 0%에 도달하면 자백합니다.</li>
-                            <li>STRESS가 높을수록 답변이 거칠어집니다.</li>
-                            <li>CONTRADICTION은 결정적 증거가 됩니다.</li>
+                            <li>STRESS가 100% 도달 시 <span className="text-red-500 font-bold">SYSTEM OVERLOAD</span>가 발생합니다.</li>
+                            <li>오버로드 상태가 <span className="text-white font-bold">3턴간 지속</span>되면 심문이 강제 종료됩니다.</li>
+                            <li>폭주 상태에서는 강압적 질문 시 의지력이 회복될 수 있습니다.</li>
                         </ul>
                     </section>
 
