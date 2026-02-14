@@ -326,62 +326,112 @@ export default function Home() {
 
     if (!selectedScenario) {
         return (
-            <main className="container flex items-center justify-center min-h-screen">
+            <main className="container flex flex-col items-center py-20 min-h-screen overflow-y-auto">
                 <div className="w-full max-w-6xl px-4">
                     <h1 className="text-4xl text-center mb-16 glow-text tracking-[0.3em]">SELECT_SCENARIO</h1>
-                    <div className="scenario-container hide-scrollbar">
-                        {scenarios.map((s) => (
-                            <div
-                                key={s.id}
-                                className={`scenario-card p-10 cursor-pointer group relative overflow-hidden flex flex-col justify-between transition-all duration-500 ${hoveredScenarioId === s.id ? `hover-active theme-${s.id}` : ''}`}
-                                onClick={() => handleSelectScenario(s)}
-                                onMouseEnter={() => setHoveredScenarioId(s.id)}
-                                onMouseLeave={() => setHoveredScenarioId(null)}
-                            >
-                                <div className="absolute top-0 left-0 w-full h-1 bg-[#00ff41] opacity-20 group-hover:opacity-100 transition-all duration-300"></div>
-                                <div className="absolute bottom-0 left-0 w-full h-1 bg-[#00ff41] opacity-20 group-hover:opacity-100 transition-all duration-300"></div>
-                                <div className="flex flex-col gap-6">
-                                    <div className="flex items-start justify-between">
-                                        <h3 className="text-3xl font-black group-hover:text-[#00ff41] transition-colors leading-tight">{s.name}</h3>
-                                        <div className="text-[10px] py-1 px-2 border border-[#333] opacity-50 uppercase tracking-[0.2em]">{s.id}</div>
-                                    </div>
-                                    <div className="text-xs text-[#00ff41] font-bold uppercase tracking-widest bg-[#00ff41]/10 self-start px-2 py-1">{s.caseName}</div>
-                                    <p className="text-base line-clamp-8 text-[#aaa] font-light leading-relaxed tracking-tight">{s.description}</p>
-                                </div>
-                                <div className="mt-12 backdrop-blur-sm bg-black/20 p-4 border border-white/5">
-                                    <div className="grid grid-cols-2 gap-4 text-xs opacity-60">
-                                        <div className="flex flex-col border-l border-[#00ff41] pl-3">
-                                            <span className="text-[8px] uppercase opacity-50">Suspects</span>
-                                            <span className="text-lg font-bold">{s.suspects.length}명</span>
+                    <div className="flex flex-col gap-16">
+                        {/* 단독 심문 섹션 */}
+                        <div>
+                            <div className="text-[10px] text-[#00ff41]/50 uppercase tracking-[0.5em] mb-6 text-center">SINGLE_INTERROGATION</div>
+                            <div className="scenario-container hide-scrollbar">
+                                {scenarios.filter(s => s.suspects.length === 1).map((s) => (
+                                    <div
+                                        key={s.id}
+                                        className={`scenario-card p-10 cursor-pointer group relative overflow-hidden flex flex-col justify-between transition-all duration-500 ${hoveredScenarioId === s.id ? `hover-active theme-${s.id}` : ''}`}
+                                        onClick={() => handleSelectScenario(s)}
+                                        onMouseEnter={() => setHoveredScenarioId(s.id)}
+                                        onMouseLeave={() => setHoveredScenarioId(null)}
+                                    >
+                                        <div className="absolute top-0 left-0 w-full h-1 bg-[#00ff41] opacity-20 group-hover:opacity-100 transition-all duration-300"></div>
+                                        <div className="absolute bottom-0 left-0 w-full h-1 bg-[#00ff41] opacity-20 group-hover:opacity-100 transition-all duration-300"></div>
+                                        <div className="flex flex-col gap-6">
+                                            <div className="flex items-start justify-between">
+                                                <h3 className="text-3xl font-black group-hover:text-[#00ff41] transition-colors leading-tight">{s.name}</h3>
+                                                <div className="text-[10px] py-1 px-2 border border-[#333] opacity-50 uppercase tracking-[0.2em]">{s.id}</div>
+                                            </div>
+                                            <div className="text-xs text-[#00ff41] font-bold uppercase tracking-widest bg-[#00ff41]/10 self-start px-2 py-1">{s.caseName}</div>
+                                            <p className="text-base line-clamp-8 text-[#aaa] font-light leading-relaxed tracking-tight">{s.description}</p>
                                         </div>
-                                        <div className="flex flex-col border-l border-[#00ff41] pl-3">
-                                            <span className="text-[8px] uppercase opacity-50">Difficulty</span>
-                                            <span className="text-lg font-bold uppercase truncate">{s.suspects.length > 1 ? 'HIGH' : 'NORMAL'}</span>
+                                        <div className="mt-12 backdrop-blur-sm bg-black/20 p-4 border border-white/5">
+                                            <div className="grid grid-cols-2 gap-4 text-xs opacity-60">
+                                                <div className="flex flex-col border-l border-[#00ff41] pl-3">
+                                                    <span className="text-[8px] uppercase opacity-50">Suspects</span>
+                                                    <span className="text-lg font-bold">{s.suspects.length}명</span>
+                                                </div>
+                                                <div className="flex flex-col border-l border-[#00ff41] pl-3">
+                                                    <span className="text-[8px] uppercase opacity-50">Difficulty</span>
+                                                    <span className="text-lg font-bold uppercase truncate">NORMAL</span>
+                                                </div>
+                                            </div>
+                                            <div className="mt-8 pt-6 border-t border-[#00ff41]/20 text-center text-sm opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 text-[#00ff41] font-black tracking-[0.4em]">
+                                                ACCESS_DENIED_BY_ROOT {">"}
+                                            </div>
                                         </div>
+                                        {s.id === 'park' && hoveredScenarioId === 'park' && (
+                                            <>
+                                                <div className="hacking-popup" style={{ top: '15%', left: '10%', animationDelay: '0s' }}>{">"} IP_FOUND: 192.168.0.1</div>
+                                                <div className="hacking-popup" style={{ top: '60%', left: '55%', animationDelay: '0.5s' }}>{">"} BRUTE_FORCING...</div>
+                                                <div className="hacking-popup" style={{ top: '40%', left: '20%', animationDelay: '1.2s' }}>{">"} ROOT_ACCESS_GRANTED</div>
+                                                <div className="hacking-popup" style={{ top: '75%', left: '40%', animationDelay: '0.8s' }}>{">"} PACKET_SNIFFING...</div>
+                                            </>
+                                        )}
                                     </div>
-                                    <div className="mt-8 pt-6 border-t border-[#00ff41]/20 text-center text-sm opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 text-[#00ff41] font-black tracking-[0.4em]">
-                                        ACCESS_DENIED_BY_ROOT {">"}
-                                    </div>
-                                </div>
-                                {s.id === 'shilla' && hoveredScenarioId === 'shilla' && (
-                                    <div className="diamond-display-box">
-                                        <div className="diamond-pixel" />
-                                        <div className="box-corner top-left" />
-                                        <div className="box-corner top-right" />
-                                        <div className="box-corner bottom-left" />
-                                        <div className="box-corner bottom-right" />
-                                    </div>
-                                )}
-                                {s.id === 'park' && hoveredScenarioId === 'park' && (
-                                    <>
-                                        <div className="hacking-popup" style={{ top: '15%', left: '10%', animationDelay: '0s' }}>{">"} IP_FOUND: 192.168.0.1</div>
-                                        <div className="hacking-popup" style={{ top: '60%', left: '55%', animationDelay: '0.5s' }}>{">"} BRUTE_FORCING...</div>
-                                        <div className="hacking-popup" style={{ top: '40%', left: '20%', animationDelay: '1.2s' }}>{">"} ROOT_ACCESS_GRANTED</div>
-                                        <div className="hacking-popup" style={{ top: '75%', left: '40%', animationDelay: '0.8s' }}>{">"} PACKET_SNIFFING...</div>
-                                    </>
-                                )}
+                                ))}
                             </div>
-                        ))}
+                        </div>
+
+                        {/* 다중 심문 섹션 */}
+                        {scenarios.some(s => s.suspects.length > 1) && (
+                            <div>
+                                <div className="text-[10px] text-[#00ff41]/50 uppercase tracking-[0.5em] mb-6 text-center">MULTI_INTERROGATION</div>
+                                <div className="scenario-container hide-scrollbar">
+                                    {scenarios.filter(s => s.suspects.length > 1).map((s) => (
+                                        <div
+                                            key={s.id}
+                                            className={`scenario-card p-10 cursor-pointer group relative overflow-hidden flex flex-col justify-between transition-all duration-500 ${hoveredScenarioId === s.id ? `hover-active theme-${s.id}` : ''}`}
+                                            onClick={() => handleSelectScenario(s)}
+                                            onMouseEnter={() => setHoveredScenarioId(s.id)}
+                                            onMouseLeave={() => setHoveredScenarioId(null)}
+                                        >
+                                            <div className="absolute top-0 left-0 w-full h-1 bg-[#00ff41] opacity-20 group-hover:opacity-100 transition-all duration-300"></div>
+                                            <div className="absolute bottom-0 left-0 w-full h-1 bg-[#00ff41] opacity-20 group-hover:opacity-100 transition-all duration-300"></div>
+                                            <div className="flex flex-col gap-6">
+                                                <div className="flex items-start justify-between">
+                                                    <h3 className="text-3xl font-black group-hover:text-[#00ff41] transition-colors leading-tight">{s.name}</h3>
+                                                    <div className="text-[10px] py-1 px-2 border border-[#333] opacity-50 uppercase tracking-[0.2em]">{s.id}</div>
+                                                </div>
+                                                <div className="text-xs text-[#00ff41] font-bold uppercase tracking-widest bg-[#00ff41]/10 self-start px-2 py-1">{s.caseName}</div>
+                                                <p className="text-base line-clamp-8 text-[#aaa] font-light leading-relaxed tracking-tight">{s.description}</p>
+                                            </div>
+                                            <div className="mt-12 backdrop-blur-sm bg-black/20 p-4 border border-white/5">
+                                                <div className="grid grid-cols-2 gap-4 text-xs opacity-60">
+                                                    <div className="flex flex-col border-l border-[#00ff41] pl-3">
+                                                        <span className="text-[8px] uppercase opacity-50">Suspects</span>
+                                                        <span className="text-lg font-bold">{s.suspects.length}명</span>
+                                                    </div>
+                                                    <div className="flex flex-col border-l border-[#00ff41] pl-3">
+                                                        <span className="text-[8px] uppercase opacity-50">Difficulty</span>
+                                                        <span className="text-lg font-bold uppercase truncate">HIGH</span>
+                                                    </div>
+                                                </div>
+                                                <div className="mt-8 pt-6 border-t border-[#00ff41]/20 text-center text-sm opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 text-[#00ff41] font-black tracking-[0.4em]">
+                                                    ACCESS_DENIED_BY_ROOT {">"}
+                                                </div>
+                                            </div>
+                                            {s.id === 'shilla' && hoveredScenarioId === 'shilla' && (
+                                                <div className="diamond-display-box">
+                                                    <div className="diamond-pixel" />
+                                                    <div className="box-corner top-left" />
+                                                    <div className="box-corner top-right" />
+                                                    <div className="box-corner bottom-left" />
+                                                    <div className="box-corner bottom-right" />
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </main>
@@ -417,7 +467,7 @@ export default function Home() {
 
     const anyOverload = Object.values(currentState.suspectStates).some(s => s.stress >= 100);
     return (
-        <main className={`container ${anyOverload ? 'main-glitch' : ''}`}>
+        <main className={`container h-screen overflow-hidden ${anyOverload ? 'main-glitch' : ''}`}>
             {/* 전체 화면 오버레이 레이어 */}
             {anyOverload && (
                 <>
