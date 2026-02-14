@@ -22,6 +22,104 @@
   }
 }
 
+@keyframes blink {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@keyframes fade-in-out {
+
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+
+  10%,
+  90% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+}
+
+@keyframes code-flicker {
+
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+
+  50% {
+    opacity: 0.2;
+  }
+}
+
+@keyframes shake-mini {
+
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  25% {
+    transform: translate(-1px, 1px);
+  }
+
+  75% {
+    transform: translate(1px, -1px);
+  }
+}
+
+@keyframes title-flicker {
+
+  0%,
+  100% {
+    opacity: 1;
+    text-shadow: 0 0 20px var(--primary-color);
+  }
+
+  33% {
+    opacity: 0.8;
+    text-shadow: 0 0 10px var(--primary-color);
+  }
+
+  66% {
+    opacity: 1;
+    text-shadow: 0 0 30px var(--primary-color);
+  }
+
+  67% {
+    opacity: 0.5;
+    text-shadow: none;
+  }
+
+  68% {
+    opacity: 1;
+    text-shadow: 0 0 20px var(--primary-color);
+  }
+}
+
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+.glow-text {
+  text-shadow: 0 0 10px var(--primary-color), 0 0 20px rgba(0, 255, 65, 0.4);
+}
+
 /* 전체 화면 노이즈 레이어 */
 .overload-overlay {
   position: fixed;
@@ -579,6 +677,7 @@ input:focus {
   color: #00ffff !important;
   background: rgba(0, 255, 255, 0.05);
 }
+
 /* 설정 창 스타일 */
 .settings-overlay {
   position: fixed;
@@ -634,4 +733,85 @@ input:focus {
   cursor: pointer;
   border-radius: 0;
   box-shadow: 0 0 10px var(--primary-color);
+}
+
+/* Opening Scene Styles */
+.opening-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  cursor: pointer;
+}
+
+.opening-title {
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  letter-spacing: 0.4em;
+  position: relative;
+  text-transform: uppercase;
+  animation: title-flicker 3s infinite;
+  text-shadow: 0 0 15px var(--primary-color);
+}
+
+.opening-title::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -10%;
+  width: 120%;
+  height: 2px;
+  background: rgba(0, 255, 65, 0.2);
+  box-shadow: 0 0 10px var(--primary-color);
+  animation: scanline 4s linear infinite;
+  pointer-events: none;
+}
+
+.opening-symbol-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.opening-icon {
+  color: var(--primary-color);
+  filter: drop-shadow(0 0 10px var(--primary-color));
+  animation: title-flicker 4s infinite;
+}
+
+.opening-system-text {
+  color: var(--primary-color);
+  text-shadow: 0 0 5px var(--primary-color);
+  animation: blink 2s infinite;
+}
+
+.code-snippet {
+  position: absolute;
+  color: var(--primary-color);
+  font-size: 10px;
+  font-weight: 400;
+  pointer-events: none;
+  white-space: nowrap;
+  opacity: 0;
+  animation: fade-in-out 3s infinite, shake-mini 0.5s infinite;
+  text-shadow: 0 0 5px var(--primary-color);
+}
+
+.press-any-button {
+  margin-top: 4rem;
+  font-size: 1.2rem;
+  color: var(--primary-color);
+  letter-spacing: 0.3em;
+  animation: blink 1.5s infinite, fade-in 1s ease-out forwards;
+  opacity: 0;
 }

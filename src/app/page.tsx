@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChatMessage, InteractionState, GameResponse, Scenario } from '@/types';
 import { scenarios } from '@/data/scenarios';
-import { Shield, Brain, Zap, Heart, AlertTriangle, Send, User, Briefcase, FileText, Settings, Volume2 } from 'lucide-react';
+import { Shield, Brain, Zap, Heart, AlertTriangle, Send, User, Briefcase, FileText, Settings, Volume2, Terminal } from 'lucide-react';
 
 export default function Home() {
     const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
@@ -26,8 +26,38 @@ export default function Home() {
     const [volume, setVolume] = useState(0.5);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
+    // 오프닝 씬 관련 상태
+    const [hasSeenOpening, setHasSeenOpening] = useState(false);
+    const [showOpening, setShowOpening] = useState(true);
+    const [canProceed, setCanProceed] = useState(false);
+
     const scrollRef = useRef<HTMLDivElement>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
+
+    // 오프닝 시퀀스 타이머 및 이벤트 리스너
+    useEffect(() => {
+        if (!hasSeenOpening && showOpening) {
+            const timer = setTimeout(() => {
+                setCanProceed(true);
+            }, 2000);
+
+            const handleInteraction = () => {
+                if (canProceed) {
+                    setShowOpening(false);
+                    setHasSeenOpening(true);
+                }
+            };
+
+            window.addEventListener('keydown', handleInteraction);
+            window.addEventListener('mousedown', handleInteraction);
+
+            return () => {
+                clearTimeout(timer);
+                window.removeEventListener('keydown', handleInteraction);
+                window.removeEventListener('mousedown', handleInteraction);
+            };
+        }
+    }, [hasSeenOpening, showOpening, canProceed]);
 
     // BGM 재생 및 볼륨 조절 로직
     useEffect(() => {
@@ -185,6 +215,45 @@ export default function Home() {
             setIsLoading(false);
         }
     };
+
+    if (showOpening && !hasSeenOpening) {
+        const codeParticles = [
+            { text: '0x7FF00A', top: '20%', left: '15%', delay: '0s' },
+            { text: 'TCP_ESTABLISHED', top: '15%', left: '70%', delay: '1.2s' },
+            { text: 'BYPASS_KEY_V2', top: '75%', left: '20%', delay: '0.5s' },
+            { text: 'ENCRYPT_ACTIVE', top: '80%', left: '65%', delay: '2.1s' },
+            { text: 'ROOT_ACCESS_GRANTED', top: '40%', left: '80%', delay: '1.5s' },
+            { text: 'MEM_ALLOC_0x34', top: '60%', left: '10%', delay: '0.8s' },
+            { text: 'FIREWALL_DISABLED', top: '30%', left: '5%', delay: '1.7s' },
+            { text: 'DB_QUERY_SUCCESS', top: '85%', left: '40%', delay: '2.5s' },
+        ];
+
+        return (
+            <div className="opening-container overflow-hidden">
+                {codeParticles.map((p, idx) => (
+                    <div
+                        key={idx}
+                        className="code-snippet"
+                        style={{ top: p.top, left: p.left, animationDelay: p.delay }}
+                    >
+                        {p.text}
+                    </div>
+                ))}
+                <div className="opening-symbol-wrapper">
+                    <Terminal size={48} className="opening-icon" />
+                    <div className="opening-system-text text-[8px] opacity-40 mt-2 font-black tracking-[0.2em]">
+                        SYSTEM_INITIALIZING... [OK]
+                    </div>
+                </div>
+                <h1 className="opening-title mt-6">CONFESS.EXE</h1>
+                {canProceed && (
+                    <div className="press-any-button animate-in fade-in duration-1000">
+                        PRESS ANY BUTTON TO START
+                    </div>
+                )}
+            </div>
+        );
+    }
 
     if (!selectedScenario) {
         return (
