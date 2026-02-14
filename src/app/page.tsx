@@ -11,18 +11,20 @@ export default function Home() {
     const [setupStep, setSetupStep] = useState<number>(0); // 0: 선택전, 1~3: 준비단계
     const [tempStress, setTempStress] = useState<number>(0); // 준비단계에서 누적되는 스트레스
     const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [suspectMessages, setSuspectMessages] = useState<Record<string, ChatMessage[]>>({});
+    const [activeSuspectId, setActiveSuspectId] = useState<string | null>(null);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [currentState, setCurrentState] = useState<InteractionState>({
-        stress: 0,
-        contradiction: 0,
-        deception: 0,
-        willpower: 100,
-        stressPeakTurns: 0
+        suspectStates: {},
+        turns: 0
     });
     const [selectedType, setSelectedType] = useState<ChatMessage['type']>('default');
-    const [clues, setClues] = useState<string[]>([]);
+    const [clues, setClues] = useState<Record<string, string[]>>({});
     const [notes, setNotes] = useState<string>('');
+    const [selectedSuspectId, setSelectedSuspectId] = useState<string | null>(null);
+    const [isCulpritSelected, setIsCulpritSelected] = useState<boolean>(false);
+    const [culpritResult, setCulpritResult] = useState<{ success: boolean, name: string } | null>(null);
     const [volume, setVolume] = useState(0.5);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
@@ -103,22 +105,48 @@ export default function Home() {
         setSetupStep(1);
         setTempStress(0);
         setMessages([]);
-        setClues([]);
+        setSuspectMessages({});
+        setActiveSuspectId(null);
+        setClues({});
         setNotes('');
+        setSelectedSuspectId(null);
+        setIsCulpritSelected(false);
+        setCulpritResult(null);
     };
 
     const handleSetupChoice = (stressBonus: number) => {
-        const nextStress = tempStress + stressBonus;
+        const nextStressBase = tempStress + stressBonus;
         if (setupStep < 3) {
-            setTempStress(nextStress);
+            setTempStress(nextStressBase);
             setSetupStep(prev => prev + 1);
         } else {
             if (selectedScenario) {
-                const finalStatus = {
-                    ...selectedScenario.initialStatus,
-                    stress: nextStress
-                };
-                setCurrentState(finalStatus);
+                const initialSuspectStates: Record<string, any> = {};
+                selectedScenario.suspects.forEach(s => {
+                    initialSuspectStates[s.id] = {
+                        ...s.initialStatus,
+                        stress: Math.max(0, s.initialStatus.stress + nextStressBase)
+                    };
+                });
+                setCurrentState({
+                    suspectStates: initialSuspectStates,
+                    turns: 0
+                });
+
+                // 다중 용의자 시나리오: 각 용의자별로 빈 메시지 배열 초기화 및 첫 용의자 선택
+                if (selectedScenario.suspects.length > 1) {
+                    const initialMessages: Record<string, ChatMessage[]> = {};
+                    selectedScenario.suspects.forEach(s => {
+                        initialMessages[s.id] = [];
+                    });
+                    setSuspectMessages(initialMessages);
+                    setActiveSuspectId(selectedScenario.suspects[0].id);
+                } else {
+                    // 단독 시나리오: 기존 방식대로
+                    setMessages([]);
+                    setActiveSuspectId(null);
+                }
+
                 setSetupStep(0);
             }
         }
@@ -154,59 +182,100 @@ export default function Home() {
     const handleSend = async () => {
         if (!input.trim() || isLoading || !selectedScenario) return;
 
-        const userMessage: ChatMessage = { role: 'user', content: input, type: selectedType };
-        setMessages(prev => [...prev, userMessage]);
+        // 다중 용의자이지만 용의자가 선택되지 않은 경우
+        if (selectedScenario.suspects.length > 1 && !activeSuspectId) {
+            alert('용의자를 먼저 선택해주세요.');
+            return;
+        }
+
+        const userMessage: ChatMessage = {
+            role: 'user',
+            content: input,
+            type: selectedType,
+            suspectId: activeSuspectId || selectedSuspectId || undefined
+        };
+
+        // 다중 vs 단독 시나리오에 따라 메시지 저장 위치 결정
+        const isMultiSuspect = selectedScenario.suspects.length > 1;
+        if (isMultiSuspect && activeSuspectId) {
+            setSuspectMessages(prev => ({
+                ...prev,
+                [activeSuspectId]: [...(prev[activeSuspectId] || []), userMessage]
+            }));
+        } else {
+            setMessages(prev => [...prev, userMessage]);
+        }
+
         setInput('');
         setIsLoading(true);
 
         try {
+            // 현재 대화 기록 결정
+            const currentMessages = isMultiSuspect && activeSuspectId
+                ? suspectMessages[activeSuspectId] || []
+                : messages;
+
             const response = await fetch('/api/interrogate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    messages: [...messages, userMessage],
+                    messages: [...currentMessages, userMessage],
                     currentState,
                     questionType: selectedType,
-                    scenarioId: selectedScenario.id
+                    scenarioId: selectedScenario.id,
+                    currentSuspectId: activeSuspectId, // 현재 심문 중인 용의자
+                    allSuspectMessages: isMultiSuspect ? suspectMessages : undefined // 교차 심문용
                 }),
             });
 
             const data: GameResponse = await response.json();
 
             if (data.answer) {
-                // 스트레스 100% 지속 여부 확인
-                let nextPeakTurns = 0;
-                if (data.state.stress >= 100) {
-                    nextPeakTurns = (currentState.stressPeakTurns || 0) + 1;
+                const speaker = selectedScenario.suspects.find(s => s.id === data.speakerId);
+                const assistantMessage: ChatMessage = {
+                    role: 'assistant',
+                    content: data.answer,
+                    assistantName: speaker?.name || 'Unknown',
+                    suspectId: data.speakerId
+                };
+
+                // 응답 메시지도 적절한 위치에 저장
+                if (isMultiSuspect && activeSuspectId) {
+                    setSuspectMessages(prev => ({
+                        ...prev,
+                        [activeSuspectId]: [...(prev[activeSuspectId] || []), assistantMessage]
+                    }));
+                } else {
+                    setMessages(prev => [...prev, assistantMessage]);
                 }
 
-                // 3턴 지속 시 강제 종료
-                if (nextPeakTurns >= 3) {
-                    setMessages(prev => [...prev,
-                    { role: 'assistant', content: data.answer },
-                    { role: 'system', content: "CRITICAL SYSTEM FAILURE: 용의자의 상태가 통제 불능입니다. 의료진에 의해 심문이 강제 중단되었습니다. 접속을 해제합니다..." }
-                    ]);
-                    setTimeout(() => {
-                        setSelectedScenario(null);
-                    }, 3000);
-                    return;
-                }
+                setCurrentState({
+                    suspectStates: data.states,
+                    turns: currentState.turns + 1
+                });
 
-                setMessages(prev => [...prev, { role: 'assistant', content: data.answer }]);
-                setCurrentState({ ...data.state, stressPeakTurns: nextPeakTurns });
-
-                // 단서 추출 로직
+                // 단서 추출 및 용의자별 정렬 로직
                 const clueMatches = data.answer.match(/<clue>(.*?)<\/clue>/g);
                 if (clueMatches) {
                     const newClues = clueMatches.map(m => m.replace(/<\/?clue>/g, ''));
                     setClues(prev => {
-                        const uniqueClues = new Set([...prev, ...newClues]);
-                        return Array.from(uniqueClues);
+                        const updated = { ...prev };
+                        if (!updated[data.speakerId]) updated[data.speakerId] = [];
+                        newClues.forEach(nc => {
+                            if (!updated[data.speakerId].includes(nc)) {
+                                updated[data.speakerId].push(nc);
+                            }
+                        });
+                        return updated;
                     });
                 }
 
-                if (data.isConfessed) {
-                    setMessages(prev => [...prev, { role: 'system', content: `SYSTEM: 대상(${selectedScenario.name})이 자백했습니다. 임무 완료.` }]);
+                if (data.isConfessed && data.confessedSuspectId) {
+                    const confessedSuspect = selectedScenario.suspects.find(s => s.id === data.confessedSuspectId);
+                    setMessages(prev => [...prev, {
+                        role: 'system',
+                        content: `SYSTEM: 용의자 ${confessedSuspect?.name}이(가) 자백했습니다.`
+                    }]);
                 }
             }
         } catch (error) {
@@ -282,18 +351,27 @@ export default function Home() {
                                 <div className="mt-12 backdrop-blur-sm bg-black/20 p-4 border border-white/5">
                                     <div className="grid grid-cols-2 gap-4 text-xs opacity-60">
                                         <div className="flex flex-col border-l border-[#00ff41] pl-3">
-                                            <span className="text-[8px] uppercase opacity-50">Age</span>
-                                            <span className="text-lg font-bold">{s.age}</span>
+                                            <span className="text-[8px] uppercase opacity-50">Suspects</span>
+                                            <span className="text-lg font-bold">{s.suspects.length}명</span>
                                         </div>
                                         <div className="flex flex-col border-l border-[#00ff41] pl-3">
-                                            <span className="text-[8px] uppercase opacity-50">Occupation</span>
-                                            <span className="text-lg font-bold uppercase truncate">{s.job}</span>
+                                            <span className="text-[8px] uppercase opacity-50">Difficulty</span>
+                                            <span className="text-lg font-bold uppercase truncate">{s.suspects.length > 1 ? 'HIGH' : 'NORMAL'}</span>
                                         </div>
                                     </div>
                                     <div className="mt-8 pt-6 border-t border-[#00ff41]/20 text-center text-sm opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 text-[#00ff41] font-black tracking-[0.4em]">
                                         ACCESS_DENIED_BY_ROOT {">"}
                                     </div>
                                 </div>
+                                {s.id === 'shilla' && hoveredScenarioId === 'shilla' && (
+                                    <div className="diamond-display-box">
+                                        <div className="diamond-pixel" />
+                                        <div className="box-corner top-left" />
+                                        <div className="box-corner top-right" />
+                                        <div className="box-corner bottom-left" />
+                                        <div className="box-corner bottom-right" />
+                                    </div>
+                                )}
                                 {s.id === 'park' && hoveredScenarioId === 'park' && (
                                     <>
                                         <div className="hacking-popup" style={{ top: '15%', left: '10%', animationDelay: '0s' }}>{">"} IP_FOUND: 192.168.0.1</div>
@@ -337,10 +415,11 @@ export default function Home() {
         );
     }
 
+    const anyOverload = Object.values(currentState.suspectStates).some(s => s.stress >= 100);
     return (
-        <main className={`container ${currentState.stress >= 100 ? 'main-glitch' : ''}`}>
+        <main className={`container ${anyOverload ? 'main-glitch' : ''}`}>
             {/* 전체 화면 오버레이 레이어 */}
-            {currentState.stress >= 100 && (
+            {anyOverload && (
                 <>
                     <div className="overload-overlay" />
                     <div className="error-window" style={{ top: '20%', left: '15%', animationDelay: '0s' }}>ACCESS_DENIED: RESOURCE_LOCKED</div>
@@ -350,34 +429,91 @@ export default function Home() {
                 </>
             )}
 
-            {/* 상단 상태 바 */}
-            <div className={`status-bar glow-text ${currentState.stress >= 100 ? 'border-red-500' : ''}`}>
-                <div className="flex gap-12">
-                    <span className={`flex items-center gap-2 ${currentState.stress >= 100 ? 'overload-text status-glitch' : ''}`}>
-                        <Zap size={14} /> STRESS: {currentState.stress >= 100 ? 'ERR_MAX' : `${currentState.stress}%`}
-                    </span>
-                    <span className={`flex items-center gap-2 ${currentState.stress >= 100 ? 'overload-text status-glitch' : ''}`}>
-                        <AlertTriangle size={14} /> CONTRADICTION: {currentState.stress >= 100 ? 'ERR_OVERLOAD' : `${currentState.contradiction}%`}
-                    </span>
-                    <span className={`flex items-center gap-2 ${currentState.stress >= 100 ? 'overload-text status-glitch' : ''}`}>
-                        <Shield size={14} /> WILLPOWER: {currentState.stress >= 100 ? 'SYSTEM_UNSTABLE' : `${currentState.willpower}%`}
-                    </span>
+            {/* 범인 지목 결과 화면 */}
+            {isCulpritSelected && culpritResult && (
+                <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4">
+                    <div className={`p-12 border-2 ${culpritResult.success ? 'border-[#00ff41] bg-[#00ff41]/5' : 'border-red-500 bg-red-500/5'} text-center max-w-xl w-full`}>
+                        <h2 className={`text-4xl font-black mb-6 ${culpritResult.success ? 'text-[#00ff41]' : 'text-red-500'}`}>
+                            {culpritResult.success ? 'MISSION_ACCOMPLISHED' : 'MISSION_FAILED'}
+                        </h2>
+                        <p className="text-xl mb-8">
+                            당신이 지목한 {culpritResult.name}는 {culpritResult.success ? '진범이었습니다.' : '진범이 아니었습니다.'}
+                        </p>
+                        <button
+                            onClick={() => setSelectedScenario(null)}
+                            className={`px-8 py-3 font-bold border ${culpritResult.success ? 'border-[#00ff41] text-[#00ff41]' : 'border-red-500 text-red-500'}`}
+                        >
+                            RETURN_TO_MENU
+                        </button>
+                    </div>
                 </div>
-                <div className="flex gap-4 items-center">
+            )}
+
+            {/* 상단 상태 바 - 레트로 스타일 복구 */}
+            <div className={`status-bar flex flex-row items-center justify-between w-full h-12 px-6 border-b border-[#00ff41]/30 z-50 ${Object.values(currentState.suspectStates).some(s => s.stress >= 100) ? 'border-red-500' : 'bg-black/80'}`}>
+
+                {/* 좌측: 용의자 상태 모니터 */}
+                <div className="flex flex-row gap-6 overflow-x-auto hide-scrollbar items-center flex-1 mr-4">
+                    {selectedScenario.suspects
+                        .filter(suspect => {
+                            const isMulti = selectedScenario.suspects.length > 1;
+                            // 다중 용의자: activeSuspectId만 표시, 단독: 전체 표시
+                            return !isMulti || suspect.id === activeSuspectId;
+                        })
+                        .map(suspect => {
+                            const state = currentState.suspectStates[suspect.id] || suspect.initialStatus;
+                            const isOverload = state.stress >= 100;
+                            const isMulti = selectedScenario.suspects.length > 1;
+
+                            return (
+                                <div
+                                    key={suspect.id}
+                                    className="flex flex-row items-center gap-3 text-[#00ff41]"
+                                >
+                                    {isMulti && (
+                                        <span className="text-xs uppercase tracking-wider font-bold border-b border-[#00ff41]">
+                                            [{suspect.name}]
+                                        </span>
+                                    )}
+                                    <div className="flex flex-row gap-4 text-xs font-mono tracking-tight">
+                                        <span className={`flex items-center gap-1 ${state.stress >= 100 ? 'text-red-500 animate-pulse' : ''}`}>
+                                            <Zap size={10} /> STRESS: {state.stress}%
+                                        </span>
+                                        <span className="flex items-center gap-1">
+                                            <AlertTriangle size={10} /> CONTRADICTION: {state.contradiction}%
+                                        </span>
+                                        <span className="flex items-center gap-1">
+                                            <Shield size={10} /> WILLPOWER: {state.willpower}%
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        })
+                    }
+                </div>
+
+                {/* 우측: 컨트롤 및 세션 정보 */}
+                <div className="flex flex-row gap-3 items-center flex-shrink-0">
+                    <span className="text-[10px] text-[#00ff41] font-mono tracking-wider opacity-80 hidden md:block whitespace-nowrap">
+                        CONFESS.EXE v1.0.5 - ACTIVE_SESSION ({selectedScenario.name})
+                    </span>
+
                     <button
                         onClick={() => {
                             setSelectedScenario(null);
                             setSetupStep(0);
                             setTempStress(0);
                         }}
-                        className="text-[10px] py-0 px-2 border-[#555] text-[#888] hover:border-[#00ff41] hover:text-[#00ff41] whitespace-nowrap"
+                        className="h-8 min-h-8 max-h-8 leading-none text-[10px] font-bold px-3 py-0 border border-[#00ff41]/50 text-[#00ff41] hover:bg-[#00ff41] hover:text-black transition-all uppercase tracking-widest whitespace-nowrap flex items-center"
+                        style={{ boxSizing: 'border-box' }}
                     >
                         ABORT_SESSION
                     </button>
-                    <span className="whitespace-nowrap">CONFESS.EXE v1.0.4 - ACTIVE_SESSION ({selectedScenario.name})</span>
+
                     <button
                         onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-                        className="p-1 border-none hover:text-[#00ff41] transition-colors"
+                        className="h-8 w-8 min-h-8 max-h-8 min-w-8 max-w-8 leading-none p-0 border border-[#00ff41]/50 text-[#00ff41] hover:bg-[#00ff41] hover:text-black transition-all flex items-center justify-center flex-shrink-0"
+                        style={{ boxSizing: 'border-box' }}
                         title="SETTINGS"
                     >
                         <Settings size={14} />
@@ -422,26 +558,46 @@ export default function Home() {
                     {/* 채팅 로그 구역 (빨간 네모 - 스크롤 발생 구역) */}
                     <div className="chat-log-area" ref={scrollRef}>
                         <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
-                        {messages.length === 0 && (
-                            <div className="text-center mt-20 opacity-50">심문을 시작하십시오. 대상은 {selectedScenario.job} {selectedScenario.name}입니다.</div>
-                        )}
-                        {messages.map((m, i) => (
-                            <div key={i} className={`mb-4 flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[80%] p-3 border ${m.role === 'user' ? 'investigator-msg' : 'border-[#666] text-white bg-[#111]'
-                                    } ${m.role === 'system' ? 'border-red-500 text-red-500 w-full text-center' : ''}`}>
-                                    <div className="text-[10px] uppercase opacity-50 mb-1">{m.role === 'user' ? 'Investigator' : 'Suspect'}</div>
-                                    <div className="whitespace-pre-wrap">
-                                        {m.content.split(/(<clue>.*?<\/clue>)/g).map((part, index) => {
-                                            if (part.startsWith('<clue>') && part.endsWith('</clue>')) {
-                                                const content = part.replace('<clue>', '').replace('</clue>', '');
-                                                return <span key={index} className="clue-text">{content}</span>;
-                                            }
-                                            return part;
-                                        })}
+                        {(() => {
+                            // 표시할 메시지 결정
+                            const isMultiSuspect = selectedScenario.suspects.length > 1;
+                            const displayMessages = isMultiSuspect && activeSuspectId
+                                ? (suspectMessages[activeSuspectId] || [])
+                                : messages;
+
+                            if (displayMessages.length === 0) {
+                                return (
+                                    <div className="text-center mt-20 opacity-50">
+                                        심문을 시작하십시오.
+                                        {isMultiSuspect && activeSuspectId
+                                            ? ` 대상: ${selectedScenario.suspects.find(s => s.id === activeSuspectId)?.name}`
+                                            : ` 대상: ${selectedScenario.suspects.map(s => s.name).join(', ')}`
+                                        }
+                                    </div>
+                                );
+                            }
+
+                            return displayMessages.map((m, i) => (
+                                <div key={i} className={`mb-4 flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                    <div className={`max-w-[80%] p-3 border ${m.role === 'user' ? 'investigator-msg' : 'border-[#666] text-white bg-[#111]'
+                                        } ${m.role === 'system' ? 'border-red-500 text-red-500 w-full text-center' : ''}`}>
+                                        <div className="text-[10px] uppercase opacity-50 mb-1">
+                                            {m.role === 'user' ? 'Investigator' : (m.assistantName || 'Suspect')}
+                                            {m.suspectId && m.role === 'user' && ` > TO: ${selectedScenario.suspects.find(s => s.id === m.suspectId)?.name}`}
+                                        </div>
+                                        <div className="whitespace-pre-wrap">
+                                            {m.content.split(/(<clue>.*?<\/clue>)/g).map((part, index) => {
+                                                if (part.startsWith('<clue>') && part.endsWith('</clue>')) {
+                                                    const content = part.replace('<clue>', '').replace('</clue>', '');
+                                                    return <span key={index} className="clue-text">{content}</span>;
+                                                }
+                                                return part;
+                                            })}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            ));
+                        })()}
                         {isLoading && <div className="animate-pulse">분석 중...</div>}
                     </div>
 
@@ -490,9 +646,57 @@ export default function Home() {
                         <div className="info-title"><FileText size={16} /> CASE SCENARIO</div>
                         <div className="scenario-text">
                             <p className="mb-2"><strong>사건명:</strong> {selectedScenario.caseName}</p>
-                            <p className="mb-2"><strong>용의자:</strong> {selectedScenario.name} ({selectedScenario.age}세, {selectedScenario.job})</p>
                             <p className="mb-4 text-sm">{selectedScenario.description}</p>
                         </div>
+                    </section>
+
+                    {/* 다중 용의자 시나리오일 경우에만 용의자 선택 섹션 표시 */}
+                    {selectedScenario.suspects.length > 1 && (
+                        <section className="info-section">
+                            <div className="info-title"><User size={16} /> INTERROGATION TARGET</div>
+                            <div className="grid grid-cols-1 gap-2">
+                                {selectedScenario.suspects.map(suspect => {
+                                    const state = currentState.suspectStates[suspect.id];
+                                    const isActive = activeSuspectId === suspect.id;
+
+                                    return (
+                                        <button
+                                            key={suspect.id}
+                                            onClick={() => setActiveSuspectId(suspect.id)}
+                                            className={`text-[10px] py-2 px-3 text-left border transition-all ${isActive
+                                                ? 'active-strategy border-[#00ff41]'
+                                                : 'border-[#333] text-[#888] hover:border-[#00ff41] hover:text-[#00ff41]'
+                                                }`}
+                                        >
+                                            <div className="font-bold">{suspect.name}</div>
+                                            <div className="text-[9px] opacity-60 mt-1">{suspect.job}</div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </section>
+                    )}
+
+                    <section className="info-section">
+                        <div className="info-title"><Briefcase size={16} /> EVIDENCE LOG</div>
+                        {Object.keys(clues).length === 0 ? (
+                            <div className="text-[10px] opacity-40">아직 발견된 단서가 없습니다.</div>
+                        ) : (
+                            <div className="space-y-4">
+                                {selectedScenario.suspects.map(s => clues[s.id] && (
+                                    <div key={s.id} className="suspect-clue-group">
+                                        <div className="text-[10px] font-bold text-[#00ff41] mb-1 opacity-60 uppercase tracking-tighter border-b border-[#00ff41]/20">{s.name}</div>
+                                        <div className="space-y-1">
+                                            {clues[s.id].map((clue, idx) => (
+                                                <div key={idx} className="evidence-item text-[11px] animate-in fade-in duration-500">
+                                                    {clue}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </section>
 
                     <section className="info-section">
@@ -524,20 +728,27 @@ export default function Home() {
                         </ul>
                     </section>
 
-                    <section className="info-section">
-                        <div className="info-title"><Briefcase size={16} /> EVIDENCE LOG</div>
-                        {clues.length === 0 ? (
-                            <div className="text-[10px] opacity-40">아직 발견된 단서가 없습니다.</div>
-                        ) : (
-                            <div className="space-y-1">
-                                {clues.map((clue, idx) => (
-                                    <div key={idx} className="evidence-item animate-in fade-in duration-500">
-                                        {clue}
-                                    </div>
+                    {selectedScenario.suspects.length > 1 && (
+                        <section className="info-section">
+                            <div className="info-title"><Shield size={16} /> IDENTIFY CULPRIT</div>
+                            <p className="text-[10px] opacity-50 mb-3">충분한 증거가 확보되었나요? 진범을 지목하십시오.</p>
+                            <div className="grid grid-cols-1 gap-2">
+                                {selectedScenario.suspects.map(s => (
+                                    <button
+                                        key={s.id}
+                                        className="text-[10px] py-2 px-3 text-left border border-[#333] text-[#888] hover:border-[#00ff41] hover:text-[#00ff41] transition-all"
+                                        onClick={() => {
+                                            setIsCulpritSelected(true);
+                                            setCulpritResult({ success: s.isCulprit, name: s.name });
+                                        }}
+                                    >
+                                        <div className="font-bold">{s.name}</div>
+                                        <div className="text-[9px] opacity-60 mt-1">{s.job}</div>
+                                    </button>
                                 ))}
                             </div>
-                        )}
-                    </section>
+                        </section>
+                    )}
 
                     <section className="info-section">
                         <div className="info-title"><User size={16} /> INVESTIGATIVE NOTES</div>
