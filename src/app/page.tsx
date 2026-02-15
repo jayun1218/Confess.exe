@@ -545,7 +545,7 @@ export default function Home() {
                 {/* 우측: 컨트롤 및 세션 정보 */}
                 <div className="flex flex-row gap-3 items-center flex-shrink-0">
                     <span className="text-[10px] text-[#00ff41] font-mono tracking-wider opacity-80 hidden md:block whitespace-nowrap">
-                        CONFESS.EXE v1.0.5 - ACTIVE_SESSION ({selectedScenario.name})
+                        CONFESS.EXE v1.1.0 - ACTIVE_SESSION ({selectedScenario.name})
                     </span>
 
                     <button
@@ -595,7 +595,7 @@ export default function Home() {
                                 />
                             </div>
                             <div className="pt-4 border-t border-white/5 text-[8px] opacity-30 text-center uppercase tracking-[0.2em]">
-                                CONFESS_OS_CORE_V1.0.4
+                                CONFESS_OS_CORE_V1.1.0
                             </div>
                         </div>
                     </div>
