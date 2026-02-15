@@ -29,37 +29,105 @@ export default function Home() {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     // 오프닝 씬 관련 상태
-    const [hasSeenOpening, setHasSeenOpening] = useState(false);
-    const [showOpening, setShowOpening] = useState(true);
+    const [openingStage, setOpeningStage] = useState<'title' | 'prologue' | 'none'>('title');
+    const [prologueIndex, setPrologueIndex] = useState(0);
+    const [completedLines, setCompletedLines] = useState<string[]>([]);
+    const [currentTypingText, setCurrentTypingText] = useState('');
+    const [isTyping, setIsTyping] = useState(false);
     const [canProceed, setCanProceed] = useState(false);
 
     const scrollRef = useRef<HTMLDivElement>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
+    const typingTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+    const prologueLines = [
+        "2999년, 네오 서울. 인공지능과 인간의 경계가 무너진 시대.",
+        "지능형 범죄의 90% 이상이 고도로 발달한 AI에 의해 자행되고 있습니다.",
+        "사이버 범죄망은 이미 인간의 이해 범위를 넘어섰습니다.",
+        "당신은 연방 수사국 소속 특수 심문관 '인퀴지터'입니다.",
+        "이들의 코드 속에 숨겨진 진실을 추출해내십시오.",
+        "이제, 심문을 시작합니다."
+    ];
 
     // 오프닝 시퀀스 타이머 및 이벤트 리스너
     useEffect(() => {
-        if (!hasSeenOpening && showOpening) {
+        if (openingStage === 'title') {
             const timer = setTimeout(() => {
                 setCanProceed(true);
-            }, 2000);
+            }, 1500);
+            return () => clearTimeout(timer);
+        }
+    }, [openingStage]);
 
-            const handleInteraction = () => {
-                if (canProceed) {
-                    setShowOpening(false);
-                    setHasSeenOpening(true);
+    // 타이핑 효과 로직
+    useEffect(() => {
+        if (openingStage === 'prologue' && prologueIndex < prologueLines.length) {
+            setIsTyping(true);
+            setCurrentTypingText('');
+            let currentText = '';
+            const targetText = prologueLines[prologueIndex];
+            let charIndex = 0;
+
+            if (typingTimerRef.current) clearInterval(typingTimerRef.current);
+
+            typingTimerRef.current = setInterval(() => {
+                if (charIndex < targetText.length) {
+                    currentText += targetText[charIndex];
+                    setCurrentTypingText(currentText);
+                    charIndex++;
+                } else {
+                    if (typingTimerRef.current) clearInterval(typingTimerRef.current);
+                    setIsTyping(false);
+                    setCanProceed(true);
                 }
-            };
-
-            window.addEventListener('keydown', handleInteraction);
-            window.addEventListener('mousedown', handleInteraction);
+            }, 100);
 
             return () => {
-                clearTimeout(timer);
-                window.removeEventListener('keydown', handleInteraction);
-                window.removeEventListener('mousedown', handleInteraction);
+                if (typingTimerRef.current) clearInterval(typingTimerRef.current);
             };
         }
-    }, [hasSeenOpening, showOpening, canProceed]);
+    }, [openingStage, prologueIndex]);
+
+    const handleOpeningClick = () => {
+        if (!canProceed && openingStage === 'title') return;
+
+        if (openingStage === 'title') {
+            setOpeningStage('prologue');
+            setCanProceed(false);
+        } else if (openingStage === 'prologue') {
+            if (isTyping) {
+                // 타이핑 중 클릭 시 인터벌 즉시 해제 및 문장 완성
+                if (typingTimerRef.current) {
+                    clearInterval(typingTimerRef.current);
+                    typingTimerRef.current = null;
+                }
+                setCurrentTypingText(prologueLines[prologueIndex]);
+                setIsTyping(false);
+                setCanProceed(true);
+            } else {
+                if (prologueIndex < prologueLines.length - 1) {
+                    // 현재 문장을 완료 목록에 추가하고 다음 문장으로
+                    setCompletedLines(prev => [...prev, prologueLines[prologueIndex]]);
+                    setPrologueIndex(prev => prev + 1);
+                    setCanProceed(false);
+                    setCurrentTypingText('');
+                } else {
+                    setOpeningStage('none');
+                }
+            }
+        }
+    };
+
+    useEffect(() => {
+        if (openingStage !== 'none') {
+            window.addEventListener('keydown', handleOpeningClick);
+            window.addEventListener('mousedown', handleOpeningClick);
+            return () => {
+                window.removeEventListener('keydown', handleOpeningClick);
+                window.removeEventListener('mousedown', handleOpeningClick);
+            };
+        }
+    }, [openingStage, canProceed, isTyping, prologueIndex]);
 
     // BGM 재생 및 볼륨 조절 로직
     useEffect(() => {
@@ -285,7 +353,7 @@ export default function Home() {
         }
     };
 
-    if (showOpening && !hasSeenOpening) {
+    if (openingStage !== 'none') {
         const codeParticles = [
             { text: '0x7FF00A', top: '20%', left: '15%', delay: '0s' },
             { text: 'TCP_ESTABLISHED', top: '15%', left: '70%', delay: '1.2s' },
@@ -299,25 +367,43 @@ export default function Home() {
 
         return (
             <div className="opening-container overflow-hidden">
-                {codeParticles.map((p, idx) => (
-                    <div
-                        key={idx}
-                        className="code-snippet"
-                        style={{ top: p.top, left: p.left, animationDelay: p.delay }}
-                    >
-                        {p.text}
-                    </div>
-                ))}
-                <div className="opening-symbol-wrapper">
-                    <Terminal size={48} className="opening-icon" />
-                    <div className="opening-system-text text-[8px] opacity-40 mt-2 font-black tracking-[0.2em]">
-                        SYSTEM_INITIALIZING... [OK]
-                    </div>
-                </div>
-                <h1 className="opening-title mt-6">CONFESS.EXE</h1>
-                {canProceed && (
-                    <div className="press-any-button animate-in fade-in duration-1000">
-                        PRESS ANY BUTTON TO START
+                {openingStage === 'title' ? (
+                    <>
+                        {codeParticles.map((p, idx) => (
+                            <div
+                                key={idx}
+                                className="code-snippet"
+                                style={{ top: p.top, left: p.left, animationDelay: p.delay }}
+                            >
+                                {p.text}
+                            </div>
+                        ))}
+                        <div className="opening-symbol-wrapper">
+                            <Terminal size={48} className="opening-icon" />
+                            <div className="opening-system-text text-[8px] opacity-40 mt-2 font-black tracking-[0.2em]">
+                                SYSTEM_INITIALIZING... [OK]
+                            </div>
+                        </div>
+                        <h1 className="opening-title mt-6">CONFESS.EXE</h1>
+                        {canProceed && (
+                            <div className="press-any-button animate-in fade-in duration-1000">
+                                PRESS ANY BUTTON TO START
+                            </div>
+                        )}
+                    </>
+                ) : (
+                    <div className="prologue-overlay">
+                        <div className="prologue-text-container">
+                            {completedLines.map((line, idx) => (
+                                <div key={idx} className="prologue-line completed">
+                                    {line}
+                                </div>
+                            ))}
+                            <div className="prologue-line typing">
+                                {currentTypingText}
+                                <span className="prologue-cursor">_</span>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>
@@ -347,7 +433,6 @@ export default function Home() {
                                         <div className="flex flex-col gap-6">
                                             <div className="flex items-start justify-between">
                                                 <h3 className="text-3xl font-black group-hover:text-[#00ff41] transition-colors leading-tight">{s.name}</h3>
-                                                <div className="text-[10px] py-1 px-2 border border-[#333] opacity-50 uppercase tracking-[0.2em]">{s.id}</div>
                                             </div>
                                             <div className="text-xs text-[#00ff41] font-bold uppercase tracking-widest bg-[#00ff41]/10 self-start px-2 py-1">{s.caseName}</div>
                                             <p className="text-base line-clamp-8 text-[#aaa] font-light leading-relaxed tracking-tight">{s.description}</p>
@@ -398,7 +483,6 @@ export default function Home() {
                                             <div className="flex flex-col gap-6">
                                                 <div className="flex items-start justify-between">
                                                     <h3 className="text-3xl font-black group-hover:text-[#00ff41] transition-colors leading-tight">{s.name}</h3>
-                                                    <div className="text-[10px] py-1 px-2 border border-[#333] opacity-50 uppercase tracking-[0.2em]">{s.id}</div>
                                                 </div>
                                                 <div className="text-xs text-[#00ff41] font-bold uppercase tracking-widest bg-[#00ff41]/10 self-start px-2 py-1">{s.caseName}</div>
                                                 <p className="text-base line-clamp-8 text-[#aaa] font-light leading-relaxed tracking-tight">{s.description}</p>
@@ -718,8 +802,8 @@ export default function Home() {
                                                 : 'border-[#333] text-[#888] hover:border-[#00ff41] hover:text-[#00ff41]'
                                                 }`}
                                         >
-                                            <div className="font-bold">{suspect.name}</div>
-                                            <div className="text-[9px] opacity-60 mt-1">{suspect.job}</div>
+                                            <div className="font-bold">{suspect.name} <span className="text-[8px] opacity-40 ml-1">v{suspect.age}</span></div>
+                                            <div className="text-[9px] opacity-60 mt-1">FUNCTION: {suspect.job}</div>
                                         </button>
                                     );
                                 })}

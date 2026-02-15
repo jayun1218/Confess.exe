@@ -16,12 +16,12 @@ export async function POST(req: Request) {
 
         // 다중 용의자 설정 생성
         const suspectsInfo = scenario.suspects.map(s => `
-용의자 ID: ${s.id}
-이름: ${s.name}
-나이: ${s.age}
-직업: ${s.job}
-비밀: ${s.secret}
-단서: ${s.clues.join(', ')}
+코드네임: ${s.name}
+식별 ID: ${s.id}
+가동 버전: v${s.age}
+주요 기능: ${s.job}
+데이터 무결성 결함(비밀): ${s.secret}
+추출된 데이터 조각(단서): ${s.clues.join(', ')}
 `).join('\n---\n');
 
         // 교차 심문을 위한 컨텍스트 구성
