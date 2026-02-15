@@ -658,6 +658,16 @@ export default function Home() {
                                                     <div className="box-corner bottom-right" />
                                                 </div>
                                             )}
+                                            {s.id === 'party' && hoveredScenarioId === 'party' && (
+                                                <>
+                                                    <div className="party-disco-ball" />
+                                                    <div className="party-confetti" style={{ top: '10%' }} />
+                                                    <div className="party-confetti" style={{ top: '20%' }} />
+                                                    <div className="party-confetti" style={{ top: '30%' }} />
+                                                    <div className="party-confetti" style={{ top: '15%' }} />
+                                                    <div className="party-confetti" style={{ top: '25%' }} />
+                                                </>
+                                            )}
                                         </div>
                                     ))}
                                 </div>

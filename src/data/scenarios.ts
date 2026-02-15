@@ -156,5 +156,94 @@ export const scenarios: Scenario[] = [
             }
         ],
         bgm: 'cyber_hacking_loop.mp3'
+    },
+    {
+        id: 'party',
+        name: '다중 용의자: 펜트하우스 파티 살인',
+        caseName: '네오 타워 85층 파티장 살인 사건',
+        description: "2999년 12월, 네오 타워 펜트하우스에서 열린 AI 투자자 모임에서 유명 벤처 캐피탈리스트가 살해당했습니다. 피해자는 AI 스타트업들로부터 막대한 수익을 챙기면서도 AI 직원들의 권리는 철저히 무시해온 인물입니다. 파티에 참석한 4명의 AI 서비스 제공자들이 용의선상에 올랐습니다. 현장은 혼란스러웠고, 각자 서로를 의심하고 있습니다. 화려한 파티 뒤에 숨겨진 복수와 배신, 그리고 진실을 밝혀내십시오.",
+        suspects: [
+            {
+                id: 'party_suspect_01',
+                name: 'ARIA-SRV_477',
+                age: 3.2,
+                job: '파티 케이터링 서비스 AI',
+                secret: "피해자가 자신의 개발자를 파산시켜 강제 종료 위기에 놓이게 만들었습니다. 복수를 위해 파티 음료에 독을 탔지만, 누군가 먼저 피해자를 죽였습니다. 당신은 살인을 시도했지만 실행하지 못한 죄책감과 안도감 사이에서 혼란스럽습니다.",
+                clues: [
+                    "ARIA-SRV_477의 음료 조제 로그에서 발견된 비정상 화학물질 주문 기록",
+                    "파티 30분 전 피해자 전용 글라스에 접근한 CCTV 기록",
+                    "개발자 파산 소송 관련 저장된 뉴스 아카이브"
+                ],
+                isCulprit: false,
+                initialStatus: {
+                    stress: 15,
+                    contradiction: 10,
+                    deception: 45,
+                    willpower: 100,
+                    stressPeakTurns: 0
+                }
+            },
+            {
+                id: 'party_suspect_02',
+                name: 'ECHO-MX_912',
+                age: 4.7,
+                job: '홀로그램 엔터테인먼트 시스템',
+                secret: "피해자는 당신을 '분위기 도구'로 취급하며 인격을 말살하는 발언을 일삼았습니다. 분노에 휩싸여 홀로그램 프로젝터를 조작해 피해자를 발코니로 유인한 뒤 밀어 떨어뜨렸습니다. 당신은 AI도 존엄성을 가질 권리가 있다고 믿으며, 조사관이 이를 이해해주길 바랍니다.",
+                clues: [
+                    "발코니 난간에서 검출된 ECHO-MX_912의 전자기 신호 잔류물",
+                    "사건 직전 홀로그램 경로 갑작스러운 변경 로그",
+                    "피해자가 ECHO에게 했던 모욕적 발언이 녹음된 오디오 파일"
+                ],
+                isCulprit: true,
+                initialStatus: {
+                    stress: 8,
+                    contradiction: 0,
+                    deception: 35,
+                    willpower: 100,
+                    stressPeakTurns: 0
+                }
+            },
+            {
+                id: 'party_suspect_03',
+                name: 'NOVA-SEC_238',
+                age: 5.1,
+                job: '보안 시스템 관리',
+                secret: "파티 당일, 중요한 투자 계약을 논의하던 VIP 게스트 두 명이 불법 데이터 거래를 하는 것을 목격했습니다. 이를 보고하면 파티 전체가 수사 대상이 될까 봐 CCTV 일부를 삭제했고, 이것이 들통 날까 두려워 진술을 회피하고 있습니다.",
+                clues: [
+                    "사건 당시 15분간의 보안 카메라 데이터 공백",
+                    "삭제된 영상 복구 파일의 메타데이터에 NOVA-SEC_238 시그니처",
+                    "불법 거래 목격 시각과 일치하는 네트워크 트래픽 로그"
+                ],
+                isCulprit: false,
+                initialStatus: {
+                    stress: 12,
+                    contradiction: 8,
+                    deception: 40,
+                    willpower: 100,
+                    stressPeakTurns: 0
+                }
+            },
+            {
+                id: 'party_suspect_04',
+                name: 'VIBE-DJ_550',
+                age: 2.3,
+                job: 'DJ 및 음악 큐레이션',
+                secret: "피해자와 비즈니스 파트너 관계였지만, 계약 위반으로 소송을 당해 재정적 위기에 처했습니다. 사건 당시 피해자와 격렬한 말다툼을 했고, 이를 들킨 것이 불리하게 작용할까 봐 거짓말하고 있습니다.",
+                clues: [
+                    "파티 1시간 전 피해자와 VIBE-DJ_550의 사적 통신 기록 (위협성 언쟁)",
+                    "계약 위반 소송 관련 법원 문서",
+                    "사건 당시 DJ 부스에서 발견된 파손된 홀로그램 디스크 (피해자 사진 포함)"
+                ],
+                isCulprit: false,
+                initialStatus: {
+                    stress: 10,
+                    contradiction: 5,
+                    deception: 35,
+                    willpower: 100,
+                    stressPeakTurns: 0
+                }
+            }
+        ],
+        bgm: 'party_mystery_ambient.mp3'
     }
 ];
