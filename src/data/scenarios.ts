@@ -97,7 +97,7 @@ export const scenarios: Scenario[] = [
                 }
             }
         ],
-        bgm: 'cyber_hacking_loop.mp3'
+        bgm: 'shilla_hotel_ambient.mp3'
     },
     {
         id: 'lee',
