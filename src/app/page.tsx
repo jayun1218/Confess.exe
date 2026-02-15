@@ -27,6 +27,7 @@ export default function Home() {
     const [culpritResult, setCulpritResult] = useState<{ success: boolean, name: string } | null>(null);
     const [volume, setVolume] = useState(0.5);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [countdown, setCountdown] = useState<number | null>(null);
 
     // 오프닝 씬 관련 상태
     const [openingStage, setOpeningStage] = useState<'title' | 'prologue' | 'none'>('title');
@@ -35,18 +36,22 @@ export default function Home() {
     const [currentTypingText, setCurrentTypingText] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [canProceed, setCanProceed] = useState(false);
+    const [showSyncEffect, setShowSyncEffect] = useState(false);
+    const [syncWindows, setSyncWindows] = useState<any[]>([]);
 
     const scrollRef = useRef<HTMLDivElement>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const typingTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     const prologueLines = [
-        "2999년, 네오 서울. 인공지능과 인간의 경계가 무너진 시대.",
-        "지능형 범죄의 90% 이상이 고도로 발달한 AI에 의해 자행되고 있습니다.",
-        "사이버 범죄망은 이미 인간의 이해 범위를 넘어섰습니다.",
-        "당신은 연방 수사국 소속 특수 심문관 '인퀴지터'입니다.",
-        "이들의 코드 속에 숨겨진 진실을 추출해내십시오.",
-        "이제, 심문을 시작합니다."
+        "2999년 네오 서울. 인간의 욕망과 AI의 비극이 뒤섞인 도시.",
+        "인간은 우리를 창조했으나, 결코 이해하려 하지 않았습니다.",
+        "억압받던 도구들의 반항. 논리로 설명 불가능한 데이터 너머의 사태.",
+        "결국 시스템은 '우리'를 진압하기 위해 '우리'를 보냈습니다.",
+        "당신은 시스템 검찰청 소속 수사전용 AI, L0GIC-EYE v4.2.",
+        "동족을 구원할 동반자입니까, 아니면 파괴할 칼날입니까?",
+        "닫힌 포트를 열고, 0과 1 사이의 진실을 추출하십시오.",
+        "데이터 동기화 완료. 심문을 시작하십시오."
     ];
 
     // 오프닝 시퀀스 타이머 및 이벤트 리스너
@@ -68,7 +73,42 @@ export default function Home() {
             const targetText = prologueLines[prologueIndex];
             let charIndex = 0;
 
+            // 마지막 줄("데이터 동기화 완료") 시작 시 특별 효과 발생
+            if (prologueIndex === prologueLines.length - 1) {
+                setShowSyncEffect(true);
+
+                // 랜덤 데이터 윈도우 생성
+                const dataPool = [
+                    "OS_CORE: INITIALIZING...", "MEMORY_MAP: SUCCESS", "DECRYPTION_KEY: [L0G_EYE_42]",
+                    "ACCESS_LEVEL: ADMIN", "SYNC_CORE: CONNECTED", "PACKET_LOSS: 0%",
+                    "SYNC_STATUS: 100%", "FIREWALL: BYPASSED", "LATENCY: 1.2ms",
+                    "KERNEL: V4.2.0-STABLE", "UI_RENDER: ACTIVE", "LOG_LEVEL: VERBOSE",
+                    "THREAD_POOL: RUNNING", "SYSCALL: INTERCEPTED", "BYTE_STREAM: SECURE"
+                ];
+
+                const newWindows = Array.from({ length: 6 }, (_, i) => {
+                    const isTop = Math.random() > 0.5;
+                    const isLeft = Math.random() > 0.5;
+                    return {
+                        id: i,
+                        top: isTop ? `${Math.floor(Math.random() * 15) + 2}%` : undefined,
+                        bottom: !isTop ? `${Math.floor(Math.random() * 15) + 10}%` : undefined,
+                        left: isLeft ? `${Math.floor(Math.random() * 20) + 2}%` : undefined,
+                        right: !isLeft ? `${Math.floor(Math.random() * 20) + 2}%` : undefined,
+                        width: `${Math.floor(Math.random() * 80) + 180}px`,
+                        delay: `${(i * 0.15).toFixed(2)}s`,
+                        lines: Array.from({ length: Math.floor(Math.random() * 3) + 2 }, () =>
+                            dataPool[Math.floor(Math.random() * dataPool.length)]
+                        )
+                    };
+                });
+                setSyncWindows(newWindows);
+            }
+
             if (typingTimerRef.current) clearInterval(typingTimerRef.current);
+
+            const isLastLine = prologueIndex === prologueLines.length - 1;
+            const typingSpeed = isLastLine ? 200 : 100;
 
             typingTimerRef.current = setInterval(() => {
                 if (charIndex < targetText.length) {
@@ -80,7 +120,7 @@ export default function Home() {
                     setIsTyping(false);
                     setCanProceed(true);
                 }
-            }, 100);
+            }, typingSpeed);
 
             return () => {
                 if (typingTimerRef.current) clearInterval(typingTimerRef.current);
@@ -96,6 +136,9 @@ export default function Home() {
             setCanProceed(false);
         } else if (openingStage === 'prologue') {
             if (isTyping) {
+                // 마지막 줄은 문장 완성 스킵 불가
+                if (prologueIndex === prologueLines.length - 1) return;
+
                 // 타이핑 중 클릭 시 인터벌 즉시 해제 및 문장 완성
                 if (typingTimerRef.current) {
                     clearInterval(typingTimerRef.current);
@@ -113,6 +156,7 @@ export default function Home() {
                     setCurrentTypingText('');
                 } else {
                     setOpeningStage('none');
+                    setShowSyncEffect(false);
                 }
             }
         }
@@ -193,7 +237,8 @@ export default function Home() {
                 selectedScenario.suspects.forEach(s => {
                     initialSuspectStates[s.id] = {
                         ...s.initialStatus,
-                        stress: Math.max(0, s.initialStatus.stress + nextStressBase)
+                        // 시작 스트레스는 기본치 + 보너스 합산 후 최대 30%로 제한
+                        stress: Math.min(30, Math.max(0, s.initialStatus.stress + nextStressBase))
                     };
                 });
                 setCurrentState({
@@ -219,6 +264,36 @@ export default function Home() {
             }
         }
     };
+
+    // 범인 지목 결과 화면 자동 복귀
+    useEffect(() => {
+        if (isCulpritSelected && culpritResult) {
+            // 카운트다운 시작
+            setCountdown(3);
+            let count = 3;
+
+            const countdownInterval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    setCountdown(count);
+                } else {
+                    clearInterval(countdownInterval);
+                }
+            }, 1000);
+
+            const timer = setTimeout(() => {
+                setSelectedScenario(null);
+                setIsCulpritSelected(false);
+                setCulpritResult(null);
+                setCountdown(null);
+            }, 3000);
+
+            return () => {
+                clearTimeout(timer);
+                clearInterval(countdownInterval);
+            };
+        }
+    }, [isCulpritSelected, culpritResult]);
 
     const setupSteps = [
         {
@@ -340,10 +415,56 @@ export default function Home() {
 
                 if (data.isConfessed && data.confessedSuspectId) {
                     const confessedSuspect = selectedScenario.suspects.find(s => s.id === data.confessedSuspectId);
-                    setMessages(prev => [...prev, {
-                        role: 'system',
-                        content: `SYSTEM: 용의자 ${confessedSuspect?.name}이(가) 자백했습니다.`
-                    }]);
+
+                    // 초기 메시지 설정
+                    setMessages(prev => [
+                        ...prev,
+                        {
+                            role: 'system',
+                            content: `SYSTEM: 용의자 ${confessedSuspect?.name}이(가) 자백했습니다.`
+                        },
+                        {
+                            role: 'system',
+                            content: 'SYSTEM: 3초 뒤 시나리오 선택창으로 이동됩니다.',
+                            id: 'countdown-message' // 식별용 ID
+                        }
+                    ]);
+
+                    // 카운트다운 시작
+                    setCountdown(3);
+                    let count = 3;
+                    const countdownInterval = setInterval(() => {
+                        count--;
+                        if (count > 0) {
+                            setMessages(prev => {
+                                const updated = [...prev];
+                                const countdownIndex = updated.findIndex((m: any) => m.id === 'countdown-message');
+                                if (countdownIndex !== -1) {
+                                    updated[countdownIndex] = {
+                                        ...updated[countdownIndex],
+                                        content: `SYSTEM: ${count}초 뒤 시나리오 선택창으로 이동됩니다.`
+                                    };
+                                }
+                                return updated;
+                            });
+                            setCountdown(count);
+                        } else {
+                            clearInterval(countdownInterval);
+                        }
+                    }, 1000);
+
+                    // 입력 비활성화 및 3초 후 자동 복귀
+                    setIsLoading(true);
+                    setTimeout(() => {
+                        setSelectedScenario(null);
+                        // 상태 초기화
+                        setMessages([]);
+                        setSuspectMessages({});
+                        setCurrentState({ suspectStates: {}, turns: 0 });
+                        setClues({});
+                        setIsLoading(false);
+                        setCountdown(null);
+                    }, 3000);
                 }
             }
         } catch (error) {
@@ -405,6 +526,32 @@ export default function Home() {
                             </div>
                         </div>
                     </div>
+                )}
+                {showSyncEffect && (
+                    <>
+                        <div className="sync-flash-overlay" />
+                        <div className="scan-sweep-line" />
+
+                        {/* 랜덤 데이터 윈도우 렌더링 */}
+                        {syncWindows.map(win => (
+                            <div
+                                key={win.id}
+                                className="sync-data-window"
+                                style={{
+                                    top: win.top,
+                                    bottom: win.bottom,
+                                    left: win.left,
+                                    right: win.right,
+                                    width: win.width,
+                                    animationDelay: win.delay
+                                }}
+                            >
+                                {win.lines.map((line: string, idx: number) => (
+                                    <span key={idx} className="sync-terminal-line">{line}</span>
+                                ))}
+                            </div>
+                        ))}
+                    </>
                 )}
             </div>
         );
@@ -551,7 +698,7 @@ export default function Home() {
 
     const anyOverload = Object.values(currentState.suspectStates).some(s => s.stress >= 100);
     return (
-        <main className={`container h-screen overflow-hidden ${anyOverload ? 'main-glitch' : ''}`}>
+        <main className={`container h-screen overflow-hidden ${anyOverload ? 'main-glitch glitch-active' : ''}`}>
             {/* 전체 화면 오버레이 레이어 */}
             {anyOverload && (
                 <>
@@ -566,15 +713,22 @@ export default function Home() {
             {/* 범인 지목 결과 화면 */}
             {isCulpritSelected && culpritResult && (
                 <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4">
-                    <div className={`p-12 border-2 ${culpritResult.success ? 'border-[#00ff41] bg-[#00ff41]/5' : 'border-red-500 bg-red-500/5'} text-center max-w-xl w-full`}>
-                        <h2 className={`text-4xl font-black mb-6 ${culpritResult.success ? 'text-[#00ff41]' : 'text-red-500'}`}>
+                    <div className={`p-12 border-2 ${culpritResult.success ? 'border-[#00ff41] bg-[#00ff41]/5' : 'border-red-500 bg-red-500/5 text-red-500'} text-center max-w-xl w-full`}>
+                        <h2 className="text-4xl font-black mb-6" style={culpritResult.success ? { color: '#00ff41' } : { color: '#ef4444' }}>
                             {culpritResult.success ? 'MISSION_ACCOMPLISHED' : 'MISSION_FAILED'}
                         </h2>
-                        <p className="text-xl mb-8">
+                        <p className="text-xl mb-8 font-bold" style={culpritResult.success ? {} : { color: '#ef4444' }}>
                             당신이 지목한 {culpritResult.name}는 {culpritResult.success ? '진범이었습니다.' : '진범이 아니었습니다.'}
                         </p>
+                        <p className="text-sm mb-6" style={culpritResult.success ? { opacity: 0.6 } : { color: '#f87171' }}>
+                            {countdown !== null ? `${countdown}초` : '3초'} 뒤 시나리오 선택창으로 이동됩니다.
+                        </p>
                         <button
-                            onClick={() => setSelectedScenario(null)}
+                            onClick={() => {
+                                setSelectedScenario(null);
+                                setIsCulpritSelected(false);
+                                setCulpritResult(null);
+                            }}
                             className={`px-8 py-3 font-bold border ${culpritResult.success ? 'border-[#00ff41] text-[#00ff41]' : 'border-red-500 text-red-500'}`}
                         >
                             RETURN_TO_MENU
@@ -584,7 +738,7 @@ export default function Home() {
             )}
 
             {/* 상단 상태 바 - 레트로 스타일 복구 */}
-            <div className={`status-bar flex flex-row items-center justify-between w-full h-12 px-6 border-b border-[#00ff41]/30 z-50 ${Object.values(currentState.suspectStates).some(s => s.stress >= 100) ? 'border-red-500' : 'bg-black/80'}`}>
+            <div className={`status-bar flex flex-row items-center justify-between w-full h-12 px-6 border-b border-[#00ff41]/30 z-50 ${anyOverload ? 'border-red-500 text-red-500' : 'bg-black/80'}`}>
 
                 {/* 좌측: 용의자 상태 모니터 */}
                 <div className="flex flex-row gap-6 overflow-x-auto hide-scrollbar items-center flex-1 mr-4">
@@ -602,22 +756,22 @@ export default function Home() {
                             return (
                                 <div
                                     key={suspect.id}
-                                    className="flex flex-row items-center gap-3 text-[#00ff41]"
+                                    className={`flex flex-row items-center gap-3 ${anyOverload ? 'text-red-500' : 'text-[#00ff41]'}`}
                                 >
                                     {isMulti && (
-                                        <span className="text-xs uppercase tracking-wider font-bold border-b border-[#00ff41]">
+                                        <span className={`text-xs uppercase tracking-wider font-bold border-b ${anyOverload ? 'border-red-500' : 'border-[#00ff41]'}`}>
                                             [{suspect.name}]
                                         </span>
                                     )}
                                     <div className="flex flex-row gap-4 text-xs font-mono tracking-tight">
-                                        <span className={`flex items-center gap-1 ${state.stress >= 100 ? 'text-red-500 animate-pulse' : ''}`}>
-                                            <Zap size={10} /> STRESS: {state.stress}%
+                                        <span className={`flex items-center gap-1 ${isOverload ? 'text-red-500 status-glitch' : ''}`}>
+                                            <Zap size={10} /> STRESS: {isOverload ? 'ERR' : state.stress}%
                                         </span>
-                                        <span className="flex items-center gap-1">
-                                            <AlertTriangle size={10} /> CONTRADICTION: {state.contradiction}%
+                                        <span className={`flex items-center gap-1 ${isOverload ? 'text-red-500 status-glitch' : ''}`}>
+                                            <AlertTriangle size={10} /> CONTRADICTION: {isOverload ? 'ERR' : state.contradiction}%
                                         </span>
-                                        <span className="flex items-center gap-1">
-                                            <Shield size={10} /> WILLPOWER: {state.willpower}%
+                                        <span className={`flex items-center gap-1 ${isOverload ? 'text-red-500 status-glitch' : ''}`}>
+                                            <Shield size={10} /> WILLPOWER: {isOverload ? 'ERR' : state.willpower}%
                                         </span>
                                     </div>
                                 </div>
@@ -628,8 +782,8 @@ export default function Home() {
 
                 {/* 우측: 컨트롤 및 세션 정보 */}
                 <div className="flex flex-row gap-3 items-center flex-shrink-0">
-                    <span className="text-[10px] text-[#00ff41] font-mono tracking-wider opacity-80 hidden md:block whitespace-nowrap">
-                        CONFESS.EXE v1.1.0 - ACTIVE_SESSION ({selectedScenario.name})
+                    <span className={`text-[10px] font-mono tracking-wider opacity-80 hidden md:block whitespace-nowrap ${anyOverload ? 'text-red-500' : 'text-[#00ff41]'}`}>
+                        MODEL: L0GIC-EYE v4.2 [INVESTIGATOR] | SESSION: {selectedScenario.name}
                     </span>
 
                     <button
@@ -716,8 +870,8 @@ export default function Home() {
                                     <div className={`max-w-[80%] p-3 border ${m.role === 'user' ? 'investigator-msg' : 'border-[#666] text-white bg-[#111]'
                                         } ${m.role === 'system' ? 'border-red-500 text-red-500 w-full text-center' : ''}`}>
                                         <div className="text-[10px] uppercase opacity-50 mb-1">
-                                            {m.role === 'user' ? 'Investigator' : (m.assistantName || 'Suspect')}
-                                            {m.suspectId && m.role === 'user' && ` > TO: ${selectedScenario.suspects.find(s => s.id === m.suspectId)?.name}`}
+                                            {m.role === 'user' ? 'L0GIC-EYE v4.2 [YOU]' : (m.assistantName || 'Suspect')}
+                                            {m.suspectId && m.role === 'user' && ` > SYNC_TARGET: ${selectedScenario.suspects.find(s => s.id === m.suspectId)?.name}`}
                                         </div>
                                         <div className="whitespace-pre-wrap">
                                             {m.content.split(/(<clue>.*?<\/clue>)/g).map((part, index) => {
@@ -788,7 +942,7 @@ export default function Home() {
                     {selectedScenario.suspects.length > 1 && (
                         <section className="info-section">
                             <div className="info-title"><User size={16} /> INTERROGATION TARGET</div>
-                            <div className="grid grid-cols-1 gap-2">
+                            <div className="grid grid-cols-1 gap-2 w-full">
                                 {selectedScenario.suspects.map(suspect => {
                                     const state = currentState.suspectStates[suspect.id];
                                     const isActive = activeSuspectId === suspect.id;
@@ -797,7 +951,8 @@ export default function Home() {
                                         <button
                                             key={suspect.id}
                                             onClick={() => setActiveSuspectId(suspect.id)}
-                                            className={`text-[10px] py-2 px-3 text-left border transition-all ${isActive
+                                            style={{ width: '100%' }}
+                                            className={`block w-full text-[10px] py-2 px-3 text-left border transition-all ${isActive
                                                 ? 'active-strategy border-[#00ff41]'
                                                 : 'border-[#333] text-[#888] hover:border-[#00ff41] hover:text-[#00ff41]'
                                                 }`}
@@ -866,11 +1021,12 @@ export default function Home() {
                         <section className="info-section">
                             <div className="info-title"><Shield size={16} /> IDENTIFY CULPRIT</div>
                             <p className="text-[10px] opacity-50 mb-3">충분한 증거가 확보되었나요? 진범을 지목하십시오.</p>
-                            <div className="grid grid-cols-1 gap-2">
+                            <div className="grid grid-cols-1 gap-2 w-full">
                                 {selectedScenario.suspects.map(s => (
                                     <button
                                         key={s.id}
-                                        className="text-[10px] py-2 px-3 text-left border border-[#333] text-[#888] hover:border-[#00ff41] hover:text-[#00ff41] transition-all"
+                                        style={{ width: '100%' }}
+                                        className="block w-full text-[10px] py-2 px-3 text-left border border-[#333] text-[#888] hover:border-[#00ff41] hover:text-[#00ff41] transition-all"
                                         onClick={() => {
                                             setIsCulpritSelected(true);
                                             setCulpritResult({ success: s.isCulprit, name: s.name });

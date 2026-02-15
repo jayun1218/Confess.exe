@@ -1028,3 +1028,131 @@ input:focus {
   align-self: center;
   /* 힌트는 가운데 정렬 */
 }
+
+/* 데이터 동기화 완료 특수 효과 */
+@keyframes sync-glitch {
+  0% {
+    opacity: 0;
+    transform: scale(3) skewX(0deg);
+    background: var(--primary-color);
+  }
+
+  20% {
+    opacity: 0.8;
+    transform: scale(1) skewX(10deg);
+    background: #fff;
+  }
+
+  40% {
+    opacity: 0.4;
+    transform: scale(1.2) skewX(-20deg);
+    background: var(--primary-color);
+  }
+
+  60% {
+    opacity: 0.7;
+    transform: scale(1) skewX(0deg);
+    filter: blur(2px);
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+.sync-flash-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 10000;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  animation: sync-glitch 0.8s ease-out forwards;
+}
+
+@keyframes sync-window-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) translate(-50%, -50%);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.1) translate(-50%, -50%);
+  }
+
+  100% {
+    opacity: 0.8;
+    transform: scale(1) translate(-50%, -50%);
+  }
+}
+
+.sync-data-window {
+  position: fixed;
+  background: rgba(0, 0, 0, 0.9);
+  border: 1px solid var(--primary-color);
+  box-shadow: 0 0 20px var(--primary-color);
+  color: var(--primary-color);
+  padding: 10px;
+  font-size: 10px;
+  z-index: 10002;
+  pointer-events: none;
+  overflow: hidden;
+  animation: sync-window-pop 0.3s ease-out forwards;
+}
+
+.sync-terminal-line {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  border-right: 2px solid var(--primary-color);
+  animation: typing 0.5s steps(20, end), blink-caret 0.5s step-end infinite;
+}
+
+@keyframes typing {
+  from {
+    width: 0
+  }
+
+  to {
+    width: 100%
+  }
+}
+
+@keyframes blink-caret {
+
+  from,
+  to {
+    border-color: transparent
+  }
+
+  50% {
+    border-color: var(--primary-color)
+  }
+}
+
+@keyframes scan-sweep {
+  0% {
+    transform: translateY(-100vh);
+  }
+
+  100% {
+    transform: translateY(100vh);
+  }
+}
+
+.scan-sweep-line {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 10vh;
+  background: linear-gradient(to bottom, transparent, var(--primary-color), transparent);
+  box-shadow: 0 0 40px var(--primary-color);
+  z-index: 10001;
+  pointer-events: none;
+  opacity: 0.8;
+  animation: scan-sweep 0.4s linear forwards;
+}
