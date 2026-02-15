@@ -924,14 +924,19 @@ export default function Home() {
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+                                    if (e.key === 'Enter' && !e.nativeEvent.isComposing && !isCulpritSelected) {
                                         handleSend();
                                     }
                                 }}
-                                placeholder="질문을 입력하십시오..."
-                                className="flex-1"
+                                disabled={isLoading || isCulpritSelected}
+                                placeholder={isCulpritSelected ? "범인 지목 처리 중..." : "질문을 입력하십시오..."}
+                                className={`flex-1 ${isCulpritSelected ? 'opacity-30 cursor-not-allowed' : ''}`}
                             />
-                            <button onClick={handleSend} disabled={isLoading} className="px-6 flex items-center gap-2 text-xl">
+                            <button
+                                onClick={handleSend}
+                                disabled={isLoading || isCulpritSelected}
+                                className={`px-6 flex items-center gap-2 text-xl ${isCulpritSelected ? 'opacity-30 cursor-not-allowed' : ''}`}
+                            >
                                 <Send />
                             </button>
                         </div>
@@ -961,8 +966,9 @@ export default function Home() {
                                         <button
                                             key={suspect.id}
                                             onClick={() => setActiveSuspectId(suspect.id)}
+                                            disabled={isCulpritSelected}
                                             style={{ width: '100%' }}
-                                            className={`block w-full text-[10px] py-2 px-3 text-left border transition-all ${isActive
+                                            className={`block w-full text-[10px] py-2 px-3 text-left border transition-all ${isCulpritSelected ? 'opacity-30 cursor-not-allowed border-[#333] text-[#555]' : isActive
                                                 ? 'active-strategy border-[#00ff41]'
                                                 : 'border-[#333] text-[#888] hover:border-[#00ff41] hover:text-[#00ff41]'
                                                 }`}
@@ -1036,7 +1042,8 @@ export default function Home() {
                                     <button
                                         key={s.id}
                                         style={{ width: '100%' }}
-                                        className="block w-full text-[10px] py-2 px-3 text-left border border-[#333] text-[#888] hover:border-[#00ff41] hover:text-[#00ff41] transition-all"
+                                        disabled={isCulpritSelected}
+                                        className={`block w-full text-[10px] py-2 px-3 text-left border transition-all ${isCulpritSelected ? 'opacity-30 cursor-not-allowed border-[#333] text-[#555]' : 'border-[#333] text-[#888] hover:border-[#00ff41] hover:text-[#00ff41]'}`}
                                         onClick={() => {
                                             setIsCulpritSelected(true);
                                             setCulpritResult({ success: s.isCulprit, name: s.name });
