@@ -47,4 +47,6 @@ export interface GameResponse {
     explanation?: string;
     isConfessed: boolean;
     confessedSuspectId?: string;
+    isSystemError?: boolean; // 스트레스 오버로드로 시스템 에러 발생
+    errorSuspectId?: string; // 에러 발생한 용의자 ID
 }

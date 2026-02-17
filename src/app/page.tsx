@@ -269,8 +269,8 @@ export default function Home() {
     useEffect(() => {
         if (isCulpritSelected && culpritResult) {
             // 카운트다운 시작
-            setCountdown(3);
-            let count = 3;
+            setCountdown(5);
+            let count = 5;
 
             const countdownInterval = setInterval(() => {
                 count--;
@@ -286,7 +286,7 @@ export default function Home() {
                 setIsCulpritSelected(false);
                 setCulpritResult(null);
                 setCountdown(null);
-            }, 3000);
+            }, 5000);
 
             return () => {
                 clearTimeout(timer);
@@ -425,14 +425,14 @@ export default function Home() {
                         },
                         {
                             role: 'system',
-                            content: 'SYSTEM: 3초 뒤 시나리오 선택창으로 이동됩니다.',
+                            content: 'SYSTEM: 5초 뒤 시나리오 선택창으로 이동됩니다.',
                             id: 'countdown-message' // 식별용 ID
                         }
                     ]);
 
                     // 카운트다운 시작
-                    setCountdown(3);
-                    let count = 3;
+                    setCountdown(5);
+                    let count = 5;
                     const countdownInterval = setInterval(() => {
                         count--;
                         if (count > 0) {
@@ -453,7 +453,7 @@ export default function Home() {
                         }
                     }, 1000);
 
-                    // 입력 비활성화 및 3초 후 자동 복귀
+                    // 입력 비활성화 및 5초 후 자동 복귀
                     setIsLoading(true);
                     setTimeout(() => {
                         setSelectedScenario(null);
@@ -464,7 +464,66 @@ export default function Home() {
                         setClues({});
                         setIsLoading(false);
                         setCountdown(null);
-                    }, 3000);
+                    }, 5000);
+                }
+
+                // 시스템 오버로드 에러 처리
+                if (data.isSystemError && data.errorSuspectId) {
+                    const errorSuspect = selectedScenario.suspects.find(s => s.id === data.errorSuspectId);
+
+                    // 초기 메시지 설정
+                    setMessages(prev => [
+                        ...prev,
+                        {
+                            role: 'system',
+                            content: `SYSTEM: [CRITICAL_ERROR] 용의자 ${errorSuspect?.name}의 코어 시스템이 과부하로 붕괴되었습니다.`
+                        },
+                        {
+                            role: 'system',
+                            content: 'SYSTEM: 더 이상 심문을 진행할 수 없습니다.',
+                        },
+                        {
+                            role: 'system',
+                            content: 'SYSTEM: 5초 뒤 시나리오 선택창으로 이동됩니다.',
+                            id: 'error-countdown-message'
+                        }
+                    ]);
+
+                    // 카운트다운 시작
+                    setCountdown(5);
+                    let count = 5;
+                    const countdownInterval = setInterval(() => {
+                        count--;
+                        if (count > 0) {
+                            setMessages(prev => {
+                                const updated = [...prev];
+                                const countdownIndex = updated.findIndex((m: any) => m.id === 'error-countdown-message');
+                                if (countdownIndex !== -1) {
+                                    updated[countdownIndex] = {
+                                        ...updated[countdownIndex],
+                                        content: `SYSTEM: ${count}초 뒤 시나리오 선택창으로 이동됩니다.`
+                                    };
+                                }
+                                return updated;
+                            });
+                            setCountdown(count);
+                        } else {
+                            clearInterval(countdownInterval);
+                        }
+                    }, 1000);
+
+                    // 입력 비활성화 및 5초 후 자동 복귀
+                    setIsLoading(true);
+                    setTimeout(() => {
+                        setSelectedScenario(null);
+                        // 상태 초기화
+                        setMessages([]);
+                        setSuspectMessages({});
+                        setCurrentState({ suspectStates: {}, turns: 0 });
+                        setClues({});
+                        setIsLoading(false);
+                        setCountdown(null);
+                    }, 5000);
                 }
             }
         } catch (error) {
@@ -706,7 +765,7 @@ export default function Home() {
         );
     }
 
-    const anyOverload = Object.values(currentState.suspectStates).some(s => s.stress >= 100);
+    const anyOverload = Object.values(currentState.suspectStates).some(s => s && s.stress >= 100);
     return (
         <main className={`container h-screen overflow-hidden ${anyOverload ? 'main-glitch glitch-active' : ''}`}>
             {/* 전체 화면 오버레이 레이어 */}
@@ -731,7 +790,7 @@ export default function Home() {
                             당신이 지목한 {culpritResult.name}는 {culpritResult.success ? '진범이었습니다.' : '진범이 아니었습니다.'}
                         </p>
                         <p className="text-sm mb-6" style={culpritResult.success ? { opacity: 0.6 } : { color: '#f87171' }}>
-                            {countdown !== null ? `${countdown}초` : '3초'} 뒤 시나리오 선택창으로 이동됩니다.
+                            {countdown !== null ? `${countdown}초` : '5초'} 뒤 시나리오 선택창으로 이동됩니다.
                         </p>
                         <button
                             onClick={() => {
